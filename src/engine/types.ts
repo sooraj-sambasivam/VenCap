@@ -33,8 +33,15 @@ export type BoardMeetingAgendaType =
 // Feature 2: LP Actions
 export type LPActionType = 'quarterly_update' | 'lp_day' | 'oneonone_call' | 'coinvest_opportunity' | 'early_distribution';
 
+// Company Milestones
+export type CompanyMilestone =
+  | 'first_revenue' | 'breakeven' | 'profitable'
+  | 'first_enterprise_deal' | '100_customers' | '1000_customers'
+  | 'series_b_ready' | 'international_expansion' | 'key_partnership'
+  | 'product_launch' | 'pivot_successful' | 'team_50';
+
 // Feature 3: Scenarios
-export type ScenarioId = 'sandbox' | 'dotcom_crash' | 'zirp_party' | 'zombie_fund' | 'first_time_fund' | 'buyout_specialist' | 'crisis_manager' | 'lp_rescue';
+export type ScenarioId = 'sandbox' | 'dotcom_crash' | 'zirp_party' | 'zombie_fund' | 'first_time_fund' | 'buyout_specialist' | 'crisis_manager' | 'lp_rescue' | 'lp_whisperer' | 'sector_specialist' | 'the_contrarian' | 'speed_demon' | 'syndicate_builder' | 'capital_efficient';
 
 // ============ CORE ENTITIES ============
 
@@ -115,6 +122,7 @@ export interface PortfolioCompany extends Startup {
   influence: InfluenceLevel;
   monthInvested: number;       // Which game month the investment was made
   events: DynamicEvent[];      // History of events for this company
+  milestones: CompanyMilestone[];  // Achieved milestones (prevents re-triggering)
   hiredTalent: TalentCandidate[];
   exitData?: ExitData;
   failureReason?: string;
@@ -243,7 +251,7 @@ export interface BoardMeeting {
 
 // Feature 3: Scenario
 export interface ScenarioWinCondition {
-  type: 'tvpi' | 'lp_sentiment' | 'exits' | 'survival';
+  type: 'tvpi' | 'lp_sentiment' | 'exits' | 'survival' | 'lp_sentiment_sustained' | 'sector_concentration_moic' | 'contrarian_exits' | 'unique_coinvestors' | 'capital_efficient';
   threshold: number;
   byMonth: number;
   description: string;
@@ -530,10 +538,16 @@ export interface GameState {
   // Syndicate Network
   syndicatePartners: SyndicateRelationship[];
 
+  // Tutorial
+  tutorialMode: boolean;
+  tutorialStep: number;
+
   // Actions (Zustand methods)
   initFund: (config: Partial<Fund> & { scenarioId?: ScenarioId }) => void;
   advanceTime: () => void;
   undoAdvance: () => void;
+  setTutorialStep: (step: number) => void;
+  completeTutorial: () => void;
   invest: (startupId: string, amount: number, ownership: number) => { success: boolean; reason?: string };
   passOnDeal: (startupId: string) => void;
   followOn: (companyId: string, amount: number) => void;
@@ -555,4 +569,36 @@ export interface GameState {
   spinOutLab: (projectId: string) => void;
   rebirth: () => void;
   resetGame: () => void;
+  saveToSlot: (slotId: string, name: string) => void;
+  loadFromSlot: (slotId: string) => boolean;
+}
+
+// ============ SAVE SLOTS ============
+
+export interface SaveSlot {
+  id: string;
+  name: string;
+  savedAt: number;
+  fundName: string;
+  month: number;
+  tvpiGross: number;
+}
+
+// ============ LEADERBOARD ============
+
+export interface LeaderboardEntry {
+  id: string;
+  fundName: string;
+  finalScore: number;
+  grade: string;
+  tvpiNet: number;
+  irrNet: number;
+  totalExits: number;
+  unicornCount: number;
+  scenarioId?: string;
+  scenarioWon?: boolean;
+  difficulty: string;
+  rebirthCount: number;
+  completedAt: number;
+  durationMonths: number;
 }

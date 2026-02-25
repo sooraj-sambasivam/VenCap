@@ -40,8 +40,14 @@ function App() {
   return (
     <BrowserRouter>
       <TooltipProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <NavBar />
-        <div className="min-h-screen bg-background pt-14 text-foreground">
+        <main id="main-content" className="min-h-screen bg-background pt-14 text-foreground">
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -58,7 +64,7 @@ function App() {
               </Routes>
             </Suspense>
           </ErrorBoundary>
-        </div>
+        </main>
         <KeyboardShortcuts />
         <Toaster />
       </TooltipProvider>

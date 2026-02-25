@@ -604,6 +604,145 @@ const POSITIVE_EVENTS: EventTemplate[] = [
       `${c.name} signed a pilot-to-production deal with a Fortune 500 company. The initial contract is modest, but expansion potential is $${randomInt(1, 5)}M+ annually.`,
     ],
   },
+  // ============ GROWTH MILESTONE EVENTS ============
+  {
+    type: 'product_market_fit_achieved',
+    sentiment: 'positive',
+    baseProbability: 0.02,
+    probabilityModifiers: (c, _m) => {
+      if (c.pmfScore > 75 && c.metrics.growthRate > 0.08) return 0.02;
+      return -Infinity;
+    },
+    severityChance: { minor: 0.0, moderate: 0.4, severe: 0.6 },
+    generateEffects: (severity) => {
+      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      return {
+        growthMod: randomBetween(0.10, 0.20) * s,
+        pmfMod: randomInt(5, 10) * s,
+        exitChanceMod: 0.05 * s,
+      };
+    },
+    titleTemplates: [
+      'Product-Market Fit Confirmed',
+      'PMF Breakthrough Moment',
+      'Organic Demand Surges',
+    ],
+    descriptionTemplates: (c) => [
+      `${c.name} has hit a clear product-market fit inflection point in ${c.sector}. Customers are converting faster than the sales team can handle, and NPS scores have hit 70+. ${c.founderName} is fielding inbound interest from strategic partners.`,
+      `After months of iteration, ${c.name}'s ${c.sector} product is resonating deeply with customers. Retention is at 95%, expansion revenue is outpacing new logos, and the word-of-mouth flywheel has kicked in.`,
+      `${c.name} crossed a critical threshold — customers are now referring other customers unprompted. ${c.founderName} reports that the last 15 deals closed without any outbound effort.`,
+    ],
+  },
+  {
+    type: 'revenue_acceleration',
+    sentiment: 'positive',
+    baseProbability: 0.025,
+    probabilityModifiers: (c, _m) => {
+      if (c.metrics.mrr > 50000 && c.metrics.growthRate > 0.05) return 0.01;
+      return -Infinity;
+    },
+    severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
+    generateEffects: (severity) => {
+      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      return {
+        mrrMod: randomBetween(0.15, 0.30) * s,
+        growthMod: randomBetween(0.05, 0.10) * s,
+      };
+    },
+    titleTemplates: [
+      'Revenue Growth Accelerates',
+      'ARR Growth Hits Inflection',
+      'Revenue Engine Firing on All Cylinders',
+    ],
+    descriptionTemplates: (c) => [
+      `${c.name}'s revenue engine is firing. MRR grew ${randomInt(20, 40)}% this month alone, driven by a combination of new logos and expansion within existing accounts in ${c.sector}. The team is projecting $${randomInt(5, 20)}M ARR by year-end.`,
+      `A new enterprise sales motion at ${c.name} is paying dividends. Average deal sizes have tripled, and the pipeline has never been healthier. ${c.founderName} is considering raising the next round early.`,
+      `${c.name} just had their best revenue month ever. A combination of product improvements and a maturing sales team has pushed MRR past $${Math.round(c.metrics.mrr / 1000)}K, with no signs of slowing down.`,
+    ],
+  },
+  {
+    type: 'team_scaling_success',
+    sentiment: 'positive',
+    baseProbability: 0.02,
+    probabilityModifiers: (c, _m) => {
+      if (c.teamSize > 30 && c.pmfScore > 50) return 0.01;
+      return -Infinity;
+    },
+    severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
+    generateEffects: (severity) => {
+      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      return {
+        growthMod: randomBetween(0.05, 0.10) * s,
+        pmfMod: randomInt(2, 4) * s,
+      };
+    },
+    titleTemplates: [
+      'Team Scaling Milestone Reached',
+      'Engineering Team Doubles Output',
+      'Organizational Maturity Leap',
+    ],
+    descriptionTemplates: (c) => [
+      `${c.name} has successfully scaled from ${Math.max(5, c.teamSize - randomInt(10, 20))} to ${c.teamSize} employees without losing velocity. ${c.founderName} credits strong hiring processes and a culture-first approach to onboarding.`,
+      `The ${c.sector} team at ${c.name} shipped more features this quarter than in all of last year combined. New engineering hires are ramping faster than expected, and code quality metrics are actually improving.`,
+      `${c.name} just promoted their first layer of middle management. The organizational structure is maturing, and ${c.founderName} is finally able to focus on strategy rather than day-to-day operations.`,
+    ],
+  },
+  {
+    type: 'international_market_entry',
+    sentiment: 'positive',
+    baseProbability: 0.015,
+    probabilityModifiers: (c, _m) => {
+      if (c.metrics.mrr > 100000 && c.pmfScore > 55) return 0.01;
+      return -Infinity;
+    },
+    severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
+    generateEffects: (severity) => {
+      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      return {
+        mrrMod: randomBetween(0.08, 0.15) * s,
+        growthMod: randomBetween(0.05, 0.08) * s,
+        exitChanceMod: 0.03 * s,
+      };
+    },
+    titleTemplates: [
+      'International Expansion Succeeds',
+      'New Market Entry Gains Traction',
+      'Global Footprint Expands',
+    ],
+    descriptionTemplates: (c) => [
+      `${c.name}'s international expansion into Europe is off to a strong start. The first quarter in-market exceeded targets by 40%, and the local team has already closed three enterprise accounts in ${c.sector}.`,
+      `${c.name} launched in APAC last month and early signals are extremely positive. ${c.founderName} reports that the product-market fit in Singapore and Australia is even stronger than in the US market.`,
+      `The ${c.sector} opportunity abroad proved irresistible — ${c.name} opened a London office and immediately signed a $${randomInt(300, 800)}K annual contract with a FTSE 100 company. The international revenue mix is growing fast.`,
+    ],
+  },
+  {
+    type: 'category_leader_recognition',
+    sentiment: 'positive',
+    baseProbability: 0.015,
+    probabilityModifiers: (c, _m) => {
+      if (c.metrics.customers > 200 && c.pmfScore > 60) return 0.01;
+      return -Infinity;
+    },
+    severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
+    generateEffects: (severity) => {
+      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      return {
+        growthMod: randomBetween(0.05, 0.10) * s,
+        mrrMod: randomBetween(0.05, 0.10) * s,
+        exitChanceMod: 0.05 * s,
+      };
+    },
+    titleTemplates: [
+      'Named Category Leader by Analysts',
+      'Industry Award Win',
+      'Top-Ranked in Analyst Report',
+    ],
+    descriptionTemplates: (c) => [
+      `${c.name} was named a Leader in the latest Gartner Magic Quadrant for ${c.sector}. The recognition is driving significant inbound interest from enterprise buyers who rely on analyst reports for purchasing decisions.`,
+      `A prestigious industry publication named ${c.name} the "Most Innovative ${c.sector} Company" of the year. The award has generated substantial media coverage and ${c.founderName} is being invited to keynote major conferences.`,
+      `${c.name} topped a G2 Grid Report in ${c.sector} with the highest user satisfaction scores. With ${c.metrics.customers}+ customers and a 4.8-star rating, the brand is becoming synonymous with the category.`,
+    ],
+  },
 ];
 
 // ============================================================

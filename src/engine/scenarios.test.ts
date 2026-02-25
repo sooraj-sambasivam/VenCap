@@ -4,8 +4,8 @@ import { SCENARIOS, getScenario, seedStartingPortfolio } from './scenarios'
 // ============ SCENARIOS array ============
 
 describe('SCENARIOS', () => {
-  it('contains 8 scenarios', () => {
-    expect(SCENARIOS).toHaveLength(8)
+  it('contains 14 scenarios', () => {
+    expect(SCENARIOS).toHaveLength(14)
   })
 
   it('all scenarios have required fields', () => {
@@ -44,7 +44,7 @@ describe('SCENARIOS', () => {
   it('win conditions have required fields', () => {
     for (const s of SCENARIOS) {
       for (const wc of s.winConditions) {
-        expect(['tvpi', 'lp_sentiment', 'exits', 'survival']).toContain(wc.type)
+        expect(['tvpi', 'lp_sentiment', 'exits', 'survival', 'lp_sentiment_sustained', 'sector_concentration_moic', 'contrarian_exits', 'unique_coinvestors', 'capital_efficient']).toContain(wc.type)
         expect(wc.threshold).toBeGreaterThan(0)
         expect(wc.byMonth).toBeGreaterThan(0)
         expect(wc.description).toBeTruthy()

@@ -15,7 +15,9 @@ import { DealCard } from '@/components/DealCard'
 import InvestModal from '@/components/InvestModal'
 import type { Startup, FundStage } from '@/engine/types'
 import { ArrowLeft, RefreshCw, Filter, Search } from 'lucide-react'
+import { TutorialOverlay } from '@/components/TutorialOverlay'
 import { PageShell } from '@/components/PageShell'
+import { PageTransition } from '@/components/PageTransition'
 
 const SORT_OPTIONS = [
   { value: 'valuation_desc', label: 'Valuation (High → Low)' },
@@ -43,7 +45,7 @@ const STAGE_OPTIONS: { value: string; label: string }[] = [
 
 export default function Deals() {
   const navigate = useNavigate()
-  const { fund, gamePhase, dealPipeline, passOnDeal } = useGameStore()
+  const { fund, gamePhase, dealPipeline, passOnDeal, tutorialMode, tutorialStep, setTutorialStep } = useGameStore()
 
   // Redirect if no fund
   useEffect(() => {
@@ -51,6 +53,13 @@ export default function Deals() {
       navigate('/', { replace: true })
     }
   }, [fund, gamePhase, navigate])
+
+  // Tutorial: auto-advance to step 1 when arriving on Deals page
+  useEffect(() => {
+    if (tutorialMode && tutorialStep === 0) {
+      setTutorialStep(1)
+    }
+  }, [tutorialMode, tutorialStep, setTutorialStep])
 
   // Filters & sort
   const [sortBy, setSortBy] = useState<SortKey>('valuation_desc')
@@ -122,16 +131,21 @@ export default function Deals() {
   }
 
   function handleInvest(startup: Startup) {
+    // Tutorial: auto-advance from step 2 (Evaluate a deal) to step 3 (Make your first investment)
+    if (tutorialMode && tutorialStep === 2) {
+      setTutorialStep(3)
+    }
     setInvestTarget(startup)
   }
 
   return (
-    <PageShell className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <PageShell className="max-w-7xl mx-auto px-4 py-6">
+      <PageTransition className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/dashboard">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="icon" aria-label="Back to dashboard">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
         </Link>
         <div>
@@ -148,11 +162,11 @@ export default function Deals() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+      <div role="group" aria-label="Deal filters and sorting" className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" aria-hidden="true" />
 
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-[calc(33%-6px)] sm:w-40">
+          <SelectTrigger className="w-[calc(33%-6px)] sm:w-40" aria-label="Filter by sector">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -165,7 +179,7 @@ export default function Deals() {
         </Select>
 
         <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-[calc(33%-6px)] sm:w-36">
+          <SelectTrigger className="w-[calc(33%-6px)] sm:w-36" aria-label="Filter by stage">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -178,7 +192,7 @@ export default function Deals() {
         </Select>
 
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-          <SelectTrigger className="w-[calc(33%-6px)] sm:w-48">
+          <SelectTrigger className="w-[calc(33%-6px)] sm:w-48" aria-label="Sort deals by">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -190,7 +204,7 @@ export default function Deals() {
           </SelectContent>
         </Select>
 
-        <Badge variant="secondary" className="ml-auto">
+        <Badge variant="secondary" className="ml-auto" aria-live="polite">
           {sortedDeals.length} showing
         </Badge>
       </div>
@@ -198,12 +212,17 @@ export default function Deals() {
       {/* Deal Cards Grid */}
       {sortedDeals.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {sortedDeals.map((startup) => (
+          {sortedDeals.map((startup, index) => (
             <DealCard
               key={startup.id}
               startup={startup}
               onInvest={handleInvest}
               onPass={handlePass}
+              style={{
+                opacity: 0,
+                animation: 'fadeInUp 250ms ease-out forwards',
+                animationDelay: `${Math.min(index * 60, 600)}ms`,
+              }}
             />
           ))}
         </div>
@@ -230,6 +249,11 @@ export default function Deals() {
         open={investTarget !== null}
         onClose={() => setInvestTarget(null)}
       />
+
+      {/* Guided Tutorial Overlays */}
+      <TutorialOverlay step={1} />
+      <TutorialOverlay step={2} />
+      </PageTransition>
     </PageShell>
   )
 }

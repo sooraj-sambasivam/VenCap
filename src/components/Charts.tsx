@@ -94,7 +94,7 @@ export const PortfolioValueChart = memo(function PortfolioValueChart({ data }: P
       <CardHeader>
         <CardTitle>Portfolio Value</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent role="img" aria-label="Line chart showing portfolio value and cash available over time">
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <XAxis
@@ -177,7 +177,7 @@ export const DeploymentPaceChart = memo(function DeploymentPaceChart({
       <CardHeader>
         <CardTitle>Deployment Pace</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent role="img" aria-label="Area chart showing capital deployment pace versus ideal deployment rate">
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={merged}>
             <XAxis
@@ -254,7 +254,7 @@ export const LPSentimentChart = memo(function LPSentimentChart({ data }: LPSenti
       <CardHeader>
         <CardTitle>LP Sentiment</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent role="img" aria-label="Line chart showing LP sentiment score over time, with green zone above 60 and red zone below 40">
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <XAxis
@@ -333,7 +333,7 @@ export const SectorAllocationChart = memo(function SectorAllocationChart({ data 
       <CardHeader>
         <CardTitle>Sector Allocation</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent role="img" aria-label="Pie chart showing investment allocation across sectors">
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -400,7 +400,7 @@ export const WaterfallChart = memo(function WaterfallChart({ data }: WaterfallCh
       <CardHeader>
         <CardTitle>Fund Performance Waterfall</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent role="img" aria-label="Bar chart showing fund performance waterfall from invested capital to net LP returns">
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData} barCategoryGap="20%">
             <XAxis dataKey="name" {...AXIS_STYLE} />

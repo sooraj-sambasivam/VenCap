@@ -1,4 +1,5 @@
 import { useState, memo } from "react"
+import type { CSSProperties } from "react"
 import type { Startup, DiscoverySource, CoInvestor } from "@/engine/types"
 import { formatCurrency, formatPercent } from "@/lib/utils"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -31,6 +32,8 @@ interface DealCardProps {
   startup: Startup
   onInvest: (startup: Startup) => void
   onPass: (startupId: string) => void
+  /** Optional inline style, used by parent for staggered animation delay */
+  style?: CSSProperties
 }
 
 const DISCOVERY_ICONS: Record<DiscoverySource, typeof Inbox> = {
@@ -60,7 +63,14 @@ function TraitBar({ label, value, color }: { label: string; value: number; color
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="w-20 capitalize text-muted-foreground">{label}</span>
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+      <div
+        className="flex-1 h-2 rounded-full bg-muted overflow-hidden"
+        role="meter"
+        aria-label={`${label} score`}
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={10}
+      >
         <div
           className={`h-full rounded-full ${color}`}
           style={{ width: `${widthPercent}%` }}
@@ -87,14 +97,18 @@ function SignalPills({ items, color }: { items: string[]; color: string }) {
   )
 }
 
-export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: DealCardProps) {
+export const DealCard = memo(function DealCard({ startup, onInvest, onPass, style }: DealCardProps) {
   const [ddExpanded, setDdExpanded] = useState(false)
 
   const DiscoveryIcon = DISCOVERY_ICONS[startup.discoverySource]
   const { metrics, unitEconomics, marketData, founderTraits } = startup
 
   return (
-    <Card className="w-full max-w-lg">
+    <Card
+      className="w-full max-w-lg transition-transform duration-200 hover:scale-[1.02]"
+      style={style}
+      aria-label={`Deal: ${startup.name}, ${startup.sector}, ${startup.stage}, valued at ${formatCurrency(startup.valuation)}`}
+    >
       {/* Header */}
       <CardHeader className="flex flex-row items-center gap-3">
         <div className="flex-1 min-w-0">
@@ -113,7 +127,7 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
             {startup.description}
           </p>
         </div>
-        <DiscoveryIcon className="size-5 shrink-0 text-muted-foreground" />
+        <DiscoveryIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       </CardHeader>
 
       <CardContent className="space-y-5">
@@ -145,7 +159,10 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
             <span className="text-muted-foreground">MRR:</span>
             <span className="font-medium">{formatCurrency(metrics.mrr)}</span>
             {metrics.growthRate > 0.05 && (
-              <TrendingUp className="size-3.5 text-green-500" />
+              <>
+                <TrendingUp className="size-3.5 text-green-500" aria-hidden="true" />
+                <span className="sr-only">High growth</span>
+              </>
             )}
           </div>
           <div>
@@ -244,14 +261,16 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
           <div className="space-y-1">
             <button
               type="button"
+              aria-expanded={ddExpanded}
+              aria-label={`Due diligence notes for ${startup.name}`}
               className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setDdExpanded((prev) => !prev)}
             >
               DD Notes
               {ddExpanded ? (
-                <ChevronUp className="size-4" />
+                <ChevronUp className="size-4" aria-hidden="true" />
               ) : (
-                <ChevronDown className="size-4" />
+                <ChevronDown className="size-4" aria-hidden="true" />
               )}
             </button>
             {ddExpanded && (
@@ -287,7 +306,14 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
             <span className="text-muted-foreground">Founder Willingness</span>
             <span className="font-medium">{startup.founderWillingness}%</span>
           </div>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-2 rounded-full bg-muted overflow-hidden"
+            role="meter"
+            aria-label="Founder willingness"
+            aria-valuenow={startup.founderWillingness}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
             <div
               className={`h-full rounded-full transition-all ${
                 startup.founderWillingness > 70
@@ -307,6 +333,7 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
             variant="ghost"
             className="flex-1"
             onClick={() => onPass(startup.id)}
+            aria-label={`Pass on ${startup.name}`}
           >
             Pass
           </Button>
@@ -314,6 +341,7 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
             variant="default"
             className="flex-1"
             onClick={() => onInvest(startup)}
+            aria-label={`Invest in ${startup.name}`}
           >
             Invest
           </Button>
@@ -321,4 +349,4 @@ export const DealCard = memo(function DealCard({ startup, onInvest, onPass }: De
       </CardContent>
     </Card>
   )
-}, (prev, next) => prev.startup.id === next.startup.id)
+}, (prev, next) => prev.startup.id === next.startup.id && prev.style === next.style)

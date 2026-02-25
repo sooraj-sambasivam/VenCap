@@ -23,6 +23,7 @@ function makeCompany(overrides: Partial<PortfolioCompany> = {}): PortfolioCompan
     unitEconomics: { cac: 1000, ltv: 5000, ltvCacRatio: 5, grossMargin: 70, paybackMonths: 6 },
     events: [],
     hiredTalent: [],
+    milestones: [],
     coInvestors: [],
     relationship: 60,
     supportScore: 50,

@@ -13,6 +13,7 @@ import type {
   Startup,
   FounderState,
   CompanyOrigin,
+  CompanyMilestone,
   LabProject,
   LPSentiment,
   DynamicEvent,
@@ -46,6 +47,20 @@ import {
   calculateBuyoutAcceptance,
 } from './vcRealism';
 import { getDifficultyModifiers, applyDifficultyToRate } from './difficultyScaling';
+import {
+  saveToSlot as saveSlotToStorage,
+  loadFromSlot as loadSlotFromStorage,
+} from './saveSlots';
+import {
+  BASE_FAIL_RATES,
+  DEFAULT_FAIL_RATE,
+  BASE_EXIT_RATES,
+  DEFAULT_EXIT_RATE,
+  MARKET_EXIT_MULTIPLIERS,
+  getExitTimeBonus,
+  getSurvivalMultiplier,
+  getTractionFailModifier,
+} from './balanceConfig';
 import {
   uuid,
   randomBetween,
@@ -448,6 +463,89 @@ function captureSnapshot(state: GameState): GameSnapshot {
 }
 
 // ============================================================
+// HELPER: MILESTONE GENERATION
+// ============================================================
+
+interface MilestoneNarrative {
+  milestone: CompanyMilestone;
+  title: string;
+  description: (company: PortfolioCompany) => string;
+}
+
+const MILESTONE_NARRATIVES: MilestoneNarrative[] = [
+  { milestone: 'first_revenue', title: 'First Revenue Generated', description: (c) => `${c.name} has generated its first revenue — a critical milestone for any ${c.sector} startup. ${c.founderName} and the team are celebrating, but the real work of scaling begins now.` },
+  { milestone: '100_customers', title: '100 Customers Reached', description: (c) => `${c.name} has crossed the 100-customer mark in ${c.sector}. This validates the product and gives the team confidence to invest in scaling go-to-market efforts.` },
+  { milestone: '1000_customers', title: '1,000 Customers Milestone', description: (c) => `${c.name} now serves over 1,000 customers. The ${c.sector} company has achieved meaningful scale, and ${c.founderName} is building out customer success infrastructure.` },
+  { milestone: 'breakeven', title: 'Breakeven Achieved', description: (c) => `${c.name} has reached breakeven — monthly revenue now covers monthly burn. This gives ${c.founderName} strategic optionality.` },
+  { milestone: 'profitable', title: 'Sustained Profitability', description: (c) => `${c.name} has been profitable for three consecutive months. In ${c.sector}, this discipline positions the company as an attractive acquisition target or IPO candidate.` },
+  { milestone: 'series_b_ready', title: 'Series B Ready', description: (c) => `${c.name} has achieved the metrics needed for a Series B raise. With a PMF score above 65, the ${c.sector} company is attracting growth-stage investors.` },
+  { milestone: 'team_50', title: 'Team Grows Past 50', description: (c) => `${c.name} has grown beyond 50 team members. ${c.founderName} is navigating the transition from startup to scale-up.` },
+  { milestone: 'first_enterprise_deal', title: 'First Enterprise Deal Closed', description: (c) => `${c.name} closed its first major enterprise contract. This validates the ${c.sector} product for large organizations.` },
+  { milestone: 'international_expansion', title: 'International Expansion Begins', description: (c) => `${c.name} has expanded beyond its home market. The ${c.sector} company is now serving customers internationally.` },
+  { milestone: 'key_partnership', title: 'Key Strategic Partnership Formed', description: (c) => `${c.name} signed a landmark partnership that significantly expands distribution in ${c.sector}.` },
+  { milestone: 'product_launch', title: 'Major Product Launch', description: (c) => `${c.name} launched a significant new product offering. ${c.founderName}'s vision for expanding the ${c.sector} platform is taking shape.` },
+  { milestone: 'pivot_successful', title: 'Pivot Successfully Executed', description: (c) => `${c.name} completed a strategic pivot that is already showing results. ${c.founderName} made the difficult call to change direction, and the ${c.sector} market is responding positively.` },
+];
+
+function getMilestoneNarrative(milestone: CompanyMilestone): MilestoneNarrative | undefined {
+  return MILESTONE_NARRATIVES.find(n => n.milestone === milestone);
+}
+
+const _profitableStreak = new Map<string, number>();
+
+function checkAndGenerateMilestones(
+  company: PortfolioCompany,
+  previousMrr: number,
+  currentMonth: number,
+): { newMilestones: CompanyMilestone[]; events: DynamicEvent[] } {
+  const milestones = company.milestones ?? [];
+  const newMilestones: CompanyMilestone[] = [];
+  const events: DynamicEvent[] = [];
+
+  function tryAdd(m: CompanyMilestone) {
+    if (milestones.includes(m) || newMilestones.includes(m)) return;
+    newMilestones.push(m);
+    const narrative = getMilestoneNarrative(m);
+    if (narrative) {
+      events.push({
+        id: uuid(),
+        type: `milestone_${m}`,
+        title: narrative.title,
+        description: narrative.description(company),
+        severity: 'moderate',
+        sentiment: 'positive',
+        effects: {},
+        month: currentMonth,
+      });
+    }
+  }
+
+  if (company.metrics.mrr > 0 && previousMrr <= 0) tryAdd('first_revenue');
+  if (company.metrics.customers > 100) tryAdd('100_customers');
+  if (company.metrics.customers > 1000) tryAdd('1000_customers');
+  if (company.metrics.mrr > company.metrics.burnRate && company.metrics.burnRate > 0) tryAdd('breakeven');
+
+  const companyId = company.id;
+  if (company.metrics.mrr > company.metrics.burnRate * 1.2 && company.metrics.burnRate > 0) {
+    const streak = (_profitableStreak.get(companyId) ?? 0) + 1;
+    _profitableStreak.set(companyId, streak);
+    if (streak >= 3) tryAdd('profitable');
+  } else {
+    _profitableStreak.set(companyId, 0);
+  }
+
+  if (company.pmfScore > 65 && company.stage === 'series_a') tryAdd('series_b_ready');
+  if (company.teamSize > 50) tryAdd('team_50');
+  if (company.metrics.mrr > 50000) tryAdd('first_enterprise_deal');
+  if (company.metrics.mrr > 200000 && company.metrics.customers > 500) tryAdd('international_expansion');
+  if (company.supportScore > 60 && company.coInvestors.some(ci => ci.tier === 'strategic')) tryAdd('key_partnership');
+  if (company.pmfScore > 55 && company.metrics.growthRate > 0.10) tryAdd('product_launch');
+  if ((company.founderState === 'focused' || company.founderState === 'coachable') && company.pmfScore > 50 && company.metrics.growthRate > 0.05) tryAdd('pivot_successful');
+
+  return { newMilestones, events };
+}
+
+// ============================================================
 // ZUSTAND STORE
 // ============================================================
 
@@ -482,6 +580,8 @@ export const useGameStore = create<GameState>()(
       scenarioWon: null as boolean | null,
       unlockedAchievements: [] as string[],
       syndicatePartners: [] as SyndicateRelationship[],
+      tutorialMode: false,
+      tutorialStep: 0,
 
       // ============================================================
       // INIT FUND
@@ -574,7 +674,23 @@ export const useGameStore = create<GameState>()(
           scenarioWon: null,
           unlockedAchievements: (get().unlockedAchievements || []),
           syndicatePartners: [],
+          // Start tutorial for first-time players (rebirthCount === 0) if not already completed
+          tutorialMode: (mergedConfig.rebirthCount || 0) === 0 && (() => { try { return !localStorage.getItem('vencap-tutorial-v3-done'); } catch { return true; } })(),
+          tutorialStep: 0,
         });
+      },
+
+      // ============================================================
+      // TUTORIAL ACTIONS
+      // ============================================================
+      setTutorialStep: (step: number) => {
+        set({ tutorialStep: step });
+      },
+      completeTutorial: () => {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('vencap-tutorial-v3-done', 'true');
+        }
+        set({ tutorialMode: false, tutorialStep: 0 });
       },
 
       // ============================================================
@@ -665,6 +781,11 @@ export const useGameStore = create<GameState>()(
           const company = portfolio[i];
           if (company.status !== 'active') continue;
 
+          // Capture pre-update MRR for milestone detection
+          const previousMrr = company.metrics.mrr;
+          // Ensure milestones array exists (backfill for older companies)
+          if (!company.milestones) company.milestones = [];
+
           // ---- 2a: Calculate All Modifiers ----
           let failMod = 1.0;
           let exitMod = 1.0;
@@ -744,12 +865,12 @@ export const useGameStore = create<GameState>()(
 
           company.events = [...company.events, ...appliedEvents];
 
-          // ---- 2c: Failure Check (difficulty-scaled) ----
-          const baseFailChance: Record<string, number> = {
-            pre_seed: 0.03, seed: 0.02, series_a: 0.015, growth: 0.01,
-          };
+          // ---- 2c: Failure Check (difficulty-scaled, with traction + survival bonus) ----
+          const monthsActive = fund.currentMonth - company.monthInvested;
+          const tractionMod = getTractionFailModifier(company.pmfScore);
+          const survivalMod = getSurvivalMultiplier(monthsActive);
           const finalFailChance = applyDifficultyToRate(
-            (baseFailChance[company.stage] || 0.02) * failMod,
+            (BASE_FAIL_RATES[company.stage] || DEFAULT_FAIL_RATE) * failMod * tractionMod * survivalMod,
             difficulty.failRateMod
           );
 
@@ -775,18 +896,14 @@ export const useGameStore = create<GameState>()(
             continue;
           }
 
-          // ---- 2d: Exit Check (difficulty-scaled) ----
-          const baseExitChance: Record<string, number> = {
-            pre_seed: 0.003, seed: 0.005, series_a: 0.008, growth: 0.012,
-          };
+          // ---- 2d: Exit Check (difficulty-scaled, with J-curve time bonus) ----
           let exitChance = applyDifficultyToRate(
-            (baseExitChance[company.stage] || 0.005) * exitMod,
+            (BASE_EXIT_RATES[company.stage] || DEFAULT_EXIT_RATE) * exitMod,
             difficulty.exitRateMod
           );
 
-          // Increases after month 48
-          const monthsActive = fund.currentMonth - company.monthInvested;
-          if (monthsActive > 48) exitChance += (monthsActive - 48) * 0.001;
+          // J-curve: exit rate increases after month 36, peaks months 60-84
+          exitChance += getExitTimeBonus(monthsActive);
 
           if (Math.random() < exitChance) {
             // Determine acquirer type
@@ -798,10 +915,7 @@ export const useGameStore = create<GameState>()(
             let exitMultiple = randomBetween(multipleRange.min, multipleRange.max);
 
             // Modify by market, PMF, relationship, co-investors
-            const marketExitMod: Record<MarketCycle, number> = {
-              bull: 1.3, normal: 1.0, cooldown: 0.8, hard: 0.6,
-            };
-            exitMultiple *= marketExitMod[marketCycle];
+            exitMultiple *= (MARKET_EXIT_MULTIPLIERS[marketCycle] || 1.0);
             if (company.pmfScore > 60) exitMultiple *= 1.2;
             if (company.relationship > 70) exitMultiple *= 1.1;
             exitMultiple *= (1 + company.supportScore * 0.005);
@@ -869,6 +983,25 @@ export const useGameStore = create<GameState>()(
             company.metrics.runway = netBurn > 1000
               ? Math.min(36, Math.max(0, Math.round(company.currentValuation * 0.1 / netBurn)))
               : 36; // break-even or profitable = max runway
+          }
+
+          // ---- 2e2: Milestone Check ----
+          const milestoneResult = checkAndGenerateMilestones(company, previousMrr, fund.currentMonth);
+          if (milestoneResult.newMilestones.length > 0) {
+            company.milestones = [...(company.milestones ?? []), ...milestoneResult.newMilestones];
+            company.events = [...company.events, ...milestoneResult.events];
+            for (const mEvt of milestoneResult.events) {
+              newNews.push({
+                id: uuid(),
+                headline: `${company.name}: ${mEvt.title}`,
+                summary: mEvt.description,
+                type: 'market_trend',
+                sentiment: 'positive',
+                month: fund.currentMonth,
+                portfolioRelated: true,
+                companyId: company.id,
+              });
+            }
           }
 
           // ---- 2f: Follow-On Generation ----
@@ -1238,6 +1371,30 @@ export const useGameStore = create<GameState>()(
             if (cond.type === 'tvpi') return fund.tvpiEstimate >= cond.threshold;
             if (cond.type === 'lp_sentiment') return state.lpSentiment.score >= cond.threshold;
             if (cond.type === 'exits') return exitsCount >= cond.threshold;
+            if (cond.type === 'lp_sentiment_sustained') {
+              const snaps = state.monthlySnapshots;
+              if (snaps.length === 0) return false;
+              const monthsAbove = snaps.filter(s => s.lpScore >= cond.threshold).length;
+              return (monthsAbove / snaps.length) >= 0.8;
+            }
+            if (cond.type === 'sector_concentration_moic') {
+              const sectors = new Set(portfolio.map(c => c.sector));
+              if (sectors.size > 2) return false;
+              return fund.tvpiEstimate >= cond.threshold;
+            }
+            if (cond.type === 'contrarian_exits') {
+              const contrarian = portfolio.filter(c => c.pmfScore <= 30);
+              const contrarianExits = contrarian.filter(c => c.status === 'exited').length;
+              return contrarian.length >= 5 && contrarianExits >= cond.threshold;
+            }
+            if (cond.type === 'unique_coinvestors') {
+              const uniquePartners = new Set((state.syndicatePartners || []).map(s => s.investorName));
+              return uniquePartners.size >= cond.threshold;
+            }
+            if (cond.type === 'capital_efficient') {
+              const deploymentRatio = fund.deployed / fund.currentSize;
+              return fund.tvpiEstimate >= cond.threshold && deploymentRatio < 0.6;
+            }
             return false;
           });
           if (allMet) {
@@ -1260,6 +1417,30 @@ export const useGameStore = create<GameState>()(
             if (cond.type === 'tvpi') return fund.tvpiEstimate >= cond.threshold;
             if (cond.type === 'lp_sentiment') return state.lpSentiment.score >= cond.threshold;
             if (cond.type === 'exits') return exitsCount >= cond.threshold;
+            if (cond.type === 'lp_sentiment_sustained') {
+              const snaps = state.monthlySnapshots;
+              if (snaps.length === 0) return false;
+              const monthsAbove = snaps.filter(s => s.lpScore >= cond.threshold).length;
+              return (monthsAbove / snaps.length) >= 0.8;
+            }
+            if (cond.type === 'sector_concentration_moic') {
+              const sectors = new Set(portfolio.map(c => c.sector));
+              if (sectors.size > 2) return false;
+              return fund.tvpiEstimate >= cond.threshold;
+            }
+            if (cond.type === 'contrarian_exits') {
+              const contrarian = portfolio.filter(c => c.pmfScore <= 30);
+              const contrarianExits = contrarian.filter(c => c.status === 'exited').length;
+              return contrarian.length >= 5 && contrarianExits >= cond.threshold;
+            }
+            if (cond.type === 'unique_coinvestors') {
+              const uniquePartners = new Set((state.syndicatePartners || []).map(s => s.investorName));
+              return uniquePartners.size >= cond.threshold;
+            }
+            if (cond.type === 'capital_efficient') {
+              const deploymentRatio = fund.deployed / fund.currentSize;
+              return fund.tvpiEstimate >= cond.threshold && deploymentRatio < 0.6;
+            }
             return false;
           });
         }
@@ -1452,6 +1633,7 @@ export const useGameStore = create<GameState>()(
           monthInvested: state.fund.currentMonth,
           events: [],
           hiredTalent: [],
+          milestones: [],
           region: startup.region ?? 'silicon_valley',
         };
 
@@ -1840,6 +2022,7 @@ export const useGameStore = create<GameState>()(
           monthInvested: state.fund!.currentMonth,
           events: [],
           hiredTalent: [],
+          milestones: [],
           region: ic.startup.region ?? 'silicon_valley',
         }));
 
@@ -1914,6 +2097,7 @@ export const useGameStore = create<GameState>()(
           monthInvested: state.fund.currentMonth,
           events: [],
           hiredTalent: [],
+          milestones: [],
           region: startup.region ?? 'silicon_valley',
         };
 
@@ -1965,6 +2149,8 @@ export const useGameStore = create<GameState>()(
           activeScenario: null,
           unlockedAchievements: state.unlockedAchievements || [],
           syndicatePartners: [],
+          tutorialMode: false,
+          tutorialStep: 0,
         });
 
         // Store skill level and rebirth count so initFund can pick them up
@@ -2004,7 +2190,37 @@ export const useGameStore = create<GameState>()(
           activeScenario: null,
           unlockedAchievements: [],
           syndicatePartners: [],
+          tutorialMode: false,
+          tutorialStep: 0,
         });
+      },
+
+      // ============================================================
+      // SAVE / LOAD SLOTS
+      // ============================================================
+      saveToSlot: (slotId: string, name: string) => {
+        const state = get();
+        // Exclude actions and history from the saved blob
+        const { history: _h, ...data } = state;
+        // Strip function-valued keys (actions) before serialization
+        const serializable: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(data)) {
+          if (typeof v !== 'function') {
+            serializable[k] = v;
+          }
+        }
+        saveSlotToStorage(slotId, name, serializable);
+      },
+
+      loadFromSlot: (slotId: string): boolean => {
+        const loaded = loadSlotFromStorage(slotId);
+        if (!loaded) return false;
+        // Apply loaded state, resetting history
+        set({
+          ...(loaded as Partial<GameState>),
+          history: [],
+        });
+        return true;
       },
     }),
     {
@@ -2042,8 +2258,16 @@ export const useGameStore = create<GameState>()(
           merged.portfolio = merged.portfolio.map(c => ({
             ...c,
             region: c.region ?? 'silicon_valley',
+            milestones: c.milestones ?? [],
           }));
         }
+        // Re-evaluate tutorial mode on reload (based on localStorage completion key)
+        if (localStorage.getItem('vencap-tutorial-v3-done')) {
+          merged.tutorialMode = false;
+          merged.tutorialStep = 0;
+        }
+        if (merged.tutorialMode === undefined) merged.tutorialMode = false;
+        if (merged.tutorialStep === undefined) merged.tutorialStep = 0;
         return merged;
       },
     }

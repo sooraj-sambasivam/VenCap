@@ -59,6 +59,7 @@ function makeCompany(overrides: Record<string, unknown> = {}) {
     metrics: { mrr: 80000, growthRate: 0.10, churn: 0.02, burnRate: 80000, runway: 12, customers: 100 },
     events: [],
     hiredTalent: [],
+    milestones: [],
     coInvestors: [],
     relationship: 60,
     supportScore: 50,

@@ -15,7 +15,9 @@ const DeploymentPaceChart = lazy(() => import('@/components/Charts').then(m => (
 const LPSentimentChart = lazy(() => import('@/components/Charts').then(m => ({ default: m.LPSentimentChart })))
 const SectorAllocationChart = lazy(() => import('@/components/Charts').then(m => ({ default: m.SectorAllocationChart })))
 import { Onboarding } from '@/components/Onboarding'
+import { TutorialOverlay } from '@/components/TutorialOverlay'
 import { PageShell } from '@/components/PageShell'
+import { PageTransition } from '@/components/PageTransition'
 import { toast } from 'sonner'
 import {
   TrendingUp,
@@ -221,14 +223,26 @@ export default function Dashboard() {
         })
       }
 
+      // Tutorial: auto-advance from step 5 (Advance time) to step 6 (You're ready!)
+      const tutState = useGameStore.getState()
+      if (tutState.tutorialMode && tutState.tutorialStep === 5) {
+        tutState.setTutorialStep(6)
+      }
+
       setAdvancing(false)
     })
   }, [advanceTime])
 
   return (
-    <PageShell className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <PageShell className="max-w-6xl mx-auto px-4 py-6">
+    <PageTransition className="space-y-6">
       {/* Onboarding Tutorial */}
       <Onboarding fundName={fund.name} fundSize={fund.currentSize} />
+
+      {/* Guided Tutorial Overlays */}
+      <TutorialOverlay step={0} />
+      <TutorialOverlay step={5} />
+      <TutorialOverlay step={6} />
 
       {/* ROW 1: Fund Header */}
       <div data-tour="fund-header" className="flex flex-wrap items-center gap-3">
@@ -278,7 +292,7 @@ export default function Dashboard() {
       <Separator />
 
       {/* ROW 2: Key Metrics */}
-      <div data-tour="key-metrics" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div data-tour="key-metrics" role="group" aria-label="Key fund metrics" className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard
           icon={<DollarSign className="h-4 w-4" />}
           label="Fund Size"
@@ -306,8 +320,31 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Deployment Progress Bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Capital Deployed</span>
+          <span>{formatPercent(deployedPct, 0)} of {formatCurrency(fund.currentSize)}</span>
+        </div>
+        <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ease-out ${
+              deployedPct >= 90
+                ? 'bg-red-500'
+                : deployedPct >= 70
+                  ? 'bg-yellow-500'
+                  : 'bg-primary'
+            }`}
+            style={{
+              width: `${Math.min(deployedPct, 100)}%`,
+              animation: 'progressFill 800ms ease-out',
+            }}
+          />
+        </div>
+      </div>
+
       {/* ROW 3: Portfolio Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div role="group" aria-label="Portfolio summary" className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard
           icon={<Building2 className="h-4 w-4" />}
           label="Active"
@@ -596,8 +633,9 @@ export default function Dashboard() {
             onClick={() => { undoAdvance(); toast.info('Reverted to previous month.') }}
             disabled={!history || history.length === 0}
             title="Undo last month advance"
+            aria-label="Undo last month advance"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline text-xs">
               {history && history.length > 0 ? `Undo (${history.length})` : 'Undo'}
             </span>
@@ -608,6 +646,7 @@ export default function Dashboard() {
             size="lg"
             onClick={handleAdvance}
             disabled={advancing}
+            aria-label={advancing ? 'Simulating next month' : `Advance time to ${nextMonthName} Year ${nextYear}`}
           >
             {advancing ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -626,11 +665,16 @@ export default function Dashboard() {
         </div>
       )}
 
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {`Year ${getGameYear(fund.currentMonth)}, ${getMonthName(fund.currentMonth)}. ${activeCompanies.length} active companies, ${exits.length} exits, ${writeoffs.length} write-offs. TVPI: ${formatMultiple(fund.tvpiEstimate)}.`}
+      </div>
+
       {/* Footer stats */}
       <div className="flex justify-center gap-6 text-xs text-muted-foreground/50 pt-2">
         <span>Skill Level: {fund.skillLevel}</span>
         {fund.rebirthCount > 0 && <span>Rebirths: {fund.rebirthCount}</span>}
       </div>
+    </PageTransition>
     </PageShell>
   )
 }

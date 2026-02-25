@@ -15,7 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { useGameStore } from '@/engine/gameState'
 import { formatCurrency, formatMultiple, formatPercent, getMonthName, getGameYear } from '@/lib/utils'
-import type { PortfolioCompany, FollowOnOpportunity, SecondaryOffer, BuyoutOffer, PendingDecision, BoardMeeting, DecisionRecord } from '@/engine/types'
+import type { PortfolioCompany, FollowOnOpportunity, SecondaryOffer, BuyoutOffer, PendingDecision, BoardMeeting, DecisionRecord, CompanyMilestone } from '@/engine/types'
 import {
   ArrowLeft,
   ChevronDown,
@@ -36,8 +36,10 @@ import {
   FolderOpen,
   MapPin,
   Calendar,
+  Trophy,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { TutorialOverlay } from '@/components/TutorialOverlay'
 
 const REGION_SHORT: Record<string, string> = {
   silicon_valley: 'SV',
@@ -327,6 +329,11 @@ export default function Portfolio() {
                         <TabsTrigger value="events">
                           Events ({company.events.length})
                         </TabsTrigger>
+                        {(company.milestones ?? []).length > 0 && (
+                          <TabsTrigger value="milestones" className="gap-1">
+                            <Trophy className="h-3 w-3" /> Milestones ({(company.milestones ?? []).length})
+                          </TabsTrigger>
+                        )}
                         {fo && <TabsTrigger value="followon">Follow-On</TabsTrigger>}
                         {sec && <TabsTrigger value="secondary">Secondary</TabsTrigger>}
                         {bo && <TabsTrigger value="buyout">Buyout Offer</TabsTrigger>}
@@ -366,6 +373,13 @@ export default function Portfolio() {
                       <TabsContent value="events">
                         <EventsTimeline events={company.events} />
                       </TabsContent>
+
+                      {/* MILESTONES TAB */}
+                      {(company.milestones ?? []).length > 0 && (
+                        <TabsContent value="milestones">
+                          <MilestonesSection milestones={company.milestones ?? []} />
+                        </TabsContent>
+                      )}
 
                       {/* FOLLOW-ON TAB */}
                       {fo && (
@@ -469,6 +483,9 @@ export default function Portfolio() {
           )}
         </div>
       )}
+
+      {/* Guided Tutorial Overlay */}
+      <TutorialOverlay step={4} />
     </PageShell>
   )
 }
@@ -677,6 +694,77 @@ function EventsTimeline({ events }: { events: PortfolioCompany['events'] }) {
           </span>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ============ MILESTONES SECTION ============
+
+const MILESTONE_LABELS: Record<CompanyMilestone, string> = {
+  first_revenue: 'First Revenue',
+  breakeven: 'Breakeven',
+  profitable: 'Profitable',
+  first_enterprise_deal: 'Enterprise Deal',
+  '100_customers': '100 Customers',
+  '1000_customers': '1,000 Customers',
+  series_b_ready: 'Series B Ready',
+  international_expansion: "Int'l Expansion",
+  key_partnership: 'Key Partnership',
+  product_launch: 'Product Launch',
+  pivot_successful: 'Pivot Success',
+  team_50: 'Team 50+',
+}
+
+const MILESTONE_COLORS: Record<CompanyMilestone, string> = {
+  first_revenue: 'bg-green-500/20 text-green-400 border-green-500/30',
+  breakeven: 'bg-green-500/20 text-green-400 border-green-500/30',
+  profitable: 'bg-green-500/20 text-green-400 border-green-500/30',
+  first_enterprise_deal: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  '100_customers': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  '1000_customers': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  series_b_ready: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  international_expansion: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  key_partnership: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  product_launch: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  pivot_successful: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  team_50: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+}
+
+function MilestonesSection({ milestones }: { milestones: CompanyMilestone[] }) {
+  if (milestones.length === 0) {
+    return <p className="text-sm text-muted-foreground">No milestones achieved yet.</p>
+  }
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Milestones achieved ({milestones.length}/12)
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {milestones.map((m) => (
+          <Badge
+            key={m}
+            variant="outline"
+            className={`${MILESTONE_COLORS[m]} text-xs py-1 px-2.5 gap-1.5`}
+          >
+            <Trophy className="h-3 w-3" />
+            {MILESTONE_LABELS[m]}
+          </Badge>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-4 pt-2 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-green-400" /> Revenue
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-amber-400" /> Growth
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-blue-400" /> Product
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-purple-400" /> Team
+        </span>
+      </div>
     </div>
   )
 }

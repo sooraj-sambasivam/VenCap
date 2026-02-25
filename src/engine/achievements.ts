@@ -38,7 +38,11 @@ export interface AchievementCheckContext {
 }
 
 // ============================================================
-// ACHIEVEMENT DEFINITIONS (~15 achievements)
+// ACHIEVEMENT DEFINITIONS (18 achievements)
+// Early game (months 1-36): first_blood, sector_scout, first_follow_on, half_deployed, diversified
+// Mid game (months 37-72): portfolio_builder, deep_pockets, speed_run, lp_whisperer, board_regular
+// Late game (months 73-120): exit_master, unicorn_hunter, triple_bagger, fund_returner, comeback_kid
+// Anytime: zombie_slayer, lab_rat, mentor_badge
 // ============================================================
 
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -47,6 +51,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: 'First Blood',
     description: 'Make your first investment.',
     icon: '\u{1F4B5}',
+  },
+  {
+    id: 'sector_scout',
+    name: 'Sector Scout',
+    description: 'Invest in 3 different sectors.',
+    icon: '\u{1F50D}',
+  },
+  {
+    id: 'first_follow_on',
+    name: 'Double Down',
+    description: 'Make your first follow-on investment.',
+    icon: '\u{1F501}',
+  },
+  {
+    id: 'half_deployed',
+    name: 'Halfway There',
+    description: 'Deploy 50% of your fund capital.',
+    icon: '\u{1F4CA}',
   },
   {
     id: 'unicorn_hunter',
@@ -141,6 +163,17 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 const ACHIEVEMENT_CHECKS: Record<string, (ctx: AchievementCheckContext) => boolean> = {
   first_blood: (ctx) =>
     ctx.portfolio.length > 0,
+
+  sector_scout: (ctx) => {
+    const sectors = new Set(ctx.portfolio.map(c => c.sector));
+    return sectors.size >= 3;
+  },
+
+  first_follow_on: (ctx) =>
+    ctx.portfolio.some(c => c.followOnInvested > 0),
+
+  half_deployed: (ctx) =>
+    ctx.fund.currentSize > 0 && ctx.fund.deployed >= ctx.fund.currentSize * 0.5,
 
   unicorn_hunter: (ctx) =>
     ctx.portfolio.some(c => c.currentValuation >= 1_000_000_000),

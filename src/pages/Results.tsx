@@ -28,6 +28,8 @@ import {
 } from 'lucide-react'
 import { PageShell } from '@/components/PageShell'
 import { ACHIEVEMENTS } from '@/engine/achievements'
+import { getLeaderboard, addToLeaderboard, clearLeaderboard, isTopThreeScore } from '@/engine/leaderboard'
+import type { LeaderboardEntry } from '@/engine/types'
 
 const LazyWaterfallChart = lazy(() => import('@/components/Charts').then(m => ({ default: m.WaterfallChart })))
 
@@ -126,6 +128,10 @@ export default function Results() {
   const { fund, gamePhase, portfolio, monthlySnapshots, rebirth, activeScenario, scenarioWon, unlockedAchievements } = useGameStore()
   const [copied, setCopied] = useState(false)
   const [showRebirthConfirm, setShowRebirthConfirm] = useState(false)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [isNewHighScore, setIsNewHighScore] = useState(false)
+  const [scoreSubmitted, setScoreSubmitted] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   // Redirect if game has not ended
   useEffect(() => {
@@ -154,6 +160,47 @@ export default function Results() {
   const gradeColor = getGradeColor(grade)
   const gradeBgColor = getGradeBgColor(grade)
   const gradeLabel = getGradeLabel(grade)
+
+  // ---- Compute final score for leaderboard ----
+  // Score formula: netTvpi * 100 + netIrr + exitBonus + scenarioBonus
+  const exitedCompaniesAll = portfolio.filter(c => c.status === 'exited')
+  const unicornCount = portfolio.filter(c => c.currentValuation >= 1_000_000_000).length
+  const baseScore = Math.round(netTvpi * 100 + netIrr + exitedCompaniesAll.length * 5 + unicornCount * 20)
+  const scenarioMultiplier = scenarioWon && activeScenario ? activeScenario.bonusScoreMultiplier : 1.0
+  const finalScore = Math.round(baseScore * scenarioMultiplier)
+
+  // Auto-submit to leaderboard
+  useEffect(() => {
+    if (scoreSubmitted || !fund) return
+    const entryId = `${fund.name}-${Date.now()}`
+    const entry: LeaderboardEntry = {
+      id: entryId,
+      fundName: fund.name,
+      finalScore,
+      grade,
+      tvpiNet: netTvpi,
+      irrNet: netIrr,
+      totalExits: exitedCompaniesAll.length,
+      unicornCount,
+      scenarioId: activeScenario?.id,
+      scenarioWon: scenarioWon ?? undefined,
+      difficulty: activeScenario?.difficulty ?? 'normal',
+      rebirthCount: fund.rebirthCount ?? 0,
+      completedAt: Date.now(),
+      durationMonths: fund.currentMonth,
+    }
+    const isTop3 = isTopThreeScore(finalScore)
+    addToLeaderboard(entry)
+    setLeaderboard(getLeaderboard())
+    setIsNewHighScore(isTop3)
+    setScoreSubmitted(true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoreSubmitted])
+
+  // Load leaderboard on mount
+  useEffect(() => {
+    setLeaderboard(getLeaderboard())
+  }, [])
 
   const exitedCompanies = portfolio.filter(c => c.status === 'exited')
   const failedCompanies = portfolio.filter(c => c.status === 'failed')
@@ -784,6 +831,91 @@ export default function Results() {
                     </div>
                   );
                 })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ============ NEW HIGH SCORE BANNER ============ */}
+        {isNewHighScore && (
+          <div className="text-center py-3 px-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 animate-pulse">
+            <p className="text-lg font-bold text-yellow-400">NEW HIGH SCORE!</p>
+            <p className="text-sm text-slate-400 mt-1">Score: {finalScore} — Top 3 on the leaderboard</p>
+          </div>
+        )}
+
+        {/* ============ LEADERBOARD ============ */}
+        {leaderboard.length > 0 && (
+          <Card className="bg-slate-900/60 border-slate-800">
+            <CardHeader>
+              <CardTitle className="text-slate-200 flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-400" />
+                Leaderboard
+                <span className="text-xs text-slate-500 font-normal ml-auto">{leaderboard.length} entries</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                      <th className="py-2 px-2 text-left">#</th>
+                      <th className="py-2 px-2 text-left">Fund</th>
+                      <th className="py-2 px-2 text-right">Score</th>
+                      <th className="py-2 px-2 text-center">Grade</th>
+                      <th className="py-2 px-2 text-right">Net TVPI</th>
+                      <th className="py-2 px-2 text-right">Net IRR</th>
+                      <th className="py-2 px-2 text-right hidden sm:table-cell">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.slice(0, 10).map((entry, idx) => {
+                      const isCurrent = scoreSubmitted && entry.fundName === fund.name && Math.abs(entry.completedAt - Date.now()) < 60000
+                      return (
+                        <tr
+                          key={entry.id}
+                          className={`border-b border-slate-800/50 ${isCurrent ? 'bg-yellow-500/5' : ''}`}
+                        >
+                          <td className="py-2 px-2 text-slate-400">
+                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                          </td>
+                          <td className="py-2 px-2 text-slate-200 font-medium truncate max-w-[120px]">
+                            {entry.fundName}
+                            {entry.scenarioId && entry.scenarioId !== 'sandbox' && (
+                              <span className="text-xs text-slate-500 ml-1">({entry.scenarioId.replace(/_/g, ' ')})</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-2 text-right font-bold text-yellow-400">{entry.finalScore}</td>
+                          <td className="py-2 px-2 text-center">
+                            <Badge variant="outline" className="text-xs">{entry.grade}</Badge>
+                          </td>
+                          <td className="py-2 px-2 text-right text-slate-300">{formatMultiple(entry.tvpiNet)}</td>
+                          <td className="py-2 px-2 text-right text-slate-300">{formatIRR(entry.irrNet)}</td>
+                          <td className="py-2 px-2 text-right text-slate-500 hidden sm:table-cell">
+                            {new Date(entry.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-3 text-right">
+                {showClearConfirm ? (
+                  <div className="inline-flex items-center gap-2">
+                    <span className="text-xs text-slate-400">Clear all scores?</span>
+                    <Button size="sm" variant="destructive" onClick={() => { clearLeaderboard(); setLeaderboard([]); setShowClearConfirm(false); }}>
+                      Confirm
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowClearConfirm(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="ghost" className="text-xs text-slate-500" onClick={() => setShowClearConfirm(true)}>
+                    Clear Leaderboard
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

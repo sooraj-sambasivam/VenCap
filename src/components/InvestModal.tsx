@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { TutorialOverlay } from "@/components/TutorialOverlay"
 
 interface InvestModalProps {
   startup: Startup | null
@@ -80,6 +81,11 @@ export default function InvestModal({ startup, open, onClose }: InvestModalProps
       setConfirming(false)
       if (result.success) {
         toast.success(`Invested ${formatCurrency(amount)} in ${startup.name}`)
+        // Tutorial: auto-advance from step 3 (Make your first investment) to step 4 (Check your portfolio)
+        const tutState = useGameStore.getState()
+        if (tutState.tutorialMode && tutState.tutorialStep === 3) {
+          tutState.setTutorialStep(4)
+        }
         onClose()
       } else {
         toast.error(result.reason || 'Investment failed')
@@ -123,6 +129,7 @@ export default function InvestModal({ startup, open, onClose }: InvestModalProps
               step={Math.max(1000, Math.round((checkRange.max - checkRange.min) / 100))}
               value={[amount]}
               onValueChange={(v) => setAmount(v[0])}
+              aria-label="Investment amount"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatCurrency(checkRange.min)}</span>
@@ -193,6 +200,9 @@ export default function InvestModal({ startup, open, onClose }: InvestModalProps
           </Button>
         </div>
       </DialogContent>
+
+      {/* Guided Tutorial Overlay */}
+      <TutorialOverlay step={3} />
     </Dialog>
   )
 }
