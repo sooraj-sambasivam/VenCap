@@ -99,6 +99,9 @@ export default function Dashboard() {
     history,
     activeScenario,
     unlockedAchievements,
+    currentEconomicSnapshot,
+    currentMarketConditions,
+    marketEra,
     advanceTime,
     undoAdvance,
   } = useGameStore()
@@ -555,6 +558,83 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* ROW 5.5: Market Climate */}
+      {currentEconomicSnapshot && currentMarketConditions && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-blue-400" />
+              Market Climate
+              {currentEconomicSnapshot.isLive && (
+                <Badge className="bg-green-500/20 text-green-400 text-[10px] ml-1">LIVE</Badge>
+              )}
+              {marketEra && marketEra !== 'current' && (
+                <Badge variant="outline" className="text-[10px] ml-1">{currentEconomicSnapshot.year} Q{currentEconomicSnapshot.quarter}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Economic Indicators Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <EconIndicator
+                label="Fed Rate"
+                value={`${currentEconomicSnapshot.fedFundsRate.toFixed(2)}%`}
+                direction={currentEconomicSnapshot.fedFundsRate > 3 ? 'up' : currentEconomicSnapshot.fedFundsRate < 1 ? 'down' : 'flat'}
+                sentiment={currentEconomicSnapshot.fedFundsRate > 4 ? 'negative' : currentEconomicSnapshot.fedFundsRate < 1 ? 'positive' : 'neutral'}
+              />
+              <EconIndicator
+                label="S&P 500"
+                value={currentEconomicSnapshot.sp500.toLocaleString()}
+                direction={currentMarketConditions.valuationMultiplier > 1.1 ? 'up' : currentMarketConditions.valuationMultiplier < 0.9 ? 'down' : 'flat'}
+                sentiment={currentMarketConditions.valuationMultiplier > 1.0 ? 'positive' : 'negative'}
+              />
+              <EconIndicator
+                label="GDP Growth"
+                value={`${currentEconomicSnapshot.gdpGrowthAnnualized > 0 ? '+' : ''}${currentEconomicSnapshot.gdpGrowthAnnualized.toFixed(1)}%`}
+                direction={currentEconomicSnapshot.gdpGrowthAnnualized > 2 ? 'up' : currentEconomicSnapshot.gdpGrowthAnnualized < 0 ? 'down' : 'flat'}
+                sentiment={currentEconomicSnapshot.gdpGrowthAnnualized > 0 ? 'positive' : 'negative'}
+              />
+              <EconIndicator
+                label="Inflation"
+                value={`${currentEconomicSnapshot.cpiYoY.toFixed(1)}%`}
+                direction={currentEconomicSnapshot.cpiYoY > 3 ? 'up' : 'flat'}
+                sentiment={currentEconomicSnapshot.cpiYoY > 4 ? 'negative' : currentEconomicSnapshot.cpiYoY < 2 ? 'positive' : 'neutral'}
+              />
+            </div>
+
+            {/* Market Effects */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="p-2 rounded bg-secondary/50 text-center">
+                <span className="text-muted-foreground block">Valuations</span>
+                <span className={`font-bold ${currentMarketConditions.valuationMultiplier > 1.1 ? 'text-green-400' : currentMarketConditions.valuationMultiplier < 0.9 ? 'text-red-400' : 'text-foreground'}`}>
+                  {currentMarketConditions.valuationMultiplier > 1.1 ? 'Elevated' : currentMarketConditions.valuationMultiplier < 0.9 ? 'Compressed' : 'Normal'}
+                </span>
+              </div>
+              <div className="p-2 rounded bg-secondary/50 text-center">
+                <span className="text-muted-foreground block">Exit Window</span>
+                <span className={`font-bold ${currentMarketConditions.ipoWindowOpen ? 'text-green-400' : 'text-red-400'}`}>
+                  {currentMarketConditions.ipoWindowOpen ? 'Open' : 'Closed'}
+                </span>
+              </div>
+              <div className="p-2 rounded bg-secondary/50 text-center">
+                <span className="text-muted-foreground block">Deal Flow</span>
+                <span className={`font-bold ${currentMarketConditions.dealFlowMultiplier > 1.1 ? 'text-green-400' : currentMarketConditions.dealFlowMultiplier < 0.9 ? 'text-red-400' : 'text-foreground'}`}>
+                  {currentMarketConditions.dealFlowMultiplier > 1.1 ? 'Strong' : currentMarketConditions.dealFlowMultiplier < 0.9 ? 'Weak' : 'Normal'}
+                </span>
+              </div>
+            </div>
+
+            {/* Educational Insight */}
+            <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
+              <p className="text-xs text-blue-300/80 leading-relaxed">
+                {currentMarketConditions.educationalInsight.slice(0, 200)}
+                {currentMarketConditions.educationalInsight.length > 200 ? '...' : ''}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ROW 6: Latest LP Report */}
       {latestReport && (
         <Card>
@@ -707,6 +787,28 @@ function MetricCard({
         {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
       </CardContent>
     </Card>
+  )
+}
+
+function EconIndicator({
+  label,
+  value,
+  direction,
+  sentiment,
+}: {
+  label: string
+  value: string
+  direction: 'up' | 'down' | 'flat'
+  sentiment: 'positive' | 'negative' | 'neutral'
+}) {
+  const arrow = direction === 'up' ? '↑' : direction === 'down' ? '↓' : '→'
+  const arrowColor = sentiment === 'positive' ? 'text-green-400' : sentiment === 'negative' ? 'text-red-400' : 'text-muted-foreground'
+  return (
+    <div className="p-2 rounded bg-secondary/50 text-center">
+      <span className="text-[10px] text-muted-foreground block">{label}</span>
+      <span className="text-sm font-bold">{value}</span>
+      <span className={`text-[10px] ml-1 ${arrowColor}`}>{arrow}</span>
+    </div>
   )
 }
 

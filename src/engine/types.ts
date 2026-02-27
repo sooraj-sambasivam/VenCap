@@ -476,6 +476,9 @@ export type GameSnapshot = {
   scenarioWon: boolean | null;
   unlockedAchievements: string[];
   syndicatePartners: SyndicateRelationship[];
+  marketEra: MarketEra | null;
+  currentEconomicSnapshot: EconomicSnapshot | null;
+  currentMarketConditions: MarketConditions | null;
 };
 
 // ============ GAME STATE (Zustand Store Shape) ============
@@ -538,6 +541,11 @@ export interface GameState {
   // Syndicate Network
   syndicatePartners: SyndicateRelationship[];
 
+  // Real Economy
+  marketEra: MarketEra | null;
+  currentEconomicSnapshot: EconomicSnapshot | null;
+  currentMarketConditions: MarketConditions | null;
+
   // Tutorial
   tutorialMode: boolean;
   tutorialStep: number;
@@ -569,8 +577,67 @@ export interface GameState {
   spinOutLab: (projectId: string) => void;
   rebirth: () => void;
   resetGame: () => void;
+  setMarketEra: (era: MarketEra) => void;
+  fetchLiveMarketData: () => Promise<void>;
   saveToSlot: (slotId: string, name: string) => void;
   loadFromSlot: (slotId: string) => boolean;
+}
+
+// ============ REAL ECONOMY ============
+
+export type MarketEra =
+  | 'dotcom_boom'       // 1998-2000
+  | 'dotcom_bust'       // 2001-2003
+  | 'recovery_2004'     // 2004-2006
+  | 'gfc_bubble'        // 2007
+  | 'gfc_crash'         // 2008-2009
+  | 'post_gfc'          // 2010-2012
+  | 'bull_2013'         // 2013-2015
+  | 'late_cycle'        // 2016-2019
+  | 'covid_crash'       // 2020Q1-Q2
+  | 'zirp_boom'         // 2020Q3-2021
+  | 'rate_hikes'        // 2022-2023
+  | 'ai_boom'           // 2023-2024
+  | 'current'           // Live data mode
+  | 'custom';           // Player-defined start year
+
+export interface EconomicSnapshot {
+  year: number;
+  quarter: number;            // 1-4
+  fedFundsRate: number;       // % (e.g. 5.25)
+  treasury10y: number;        // 10-year Treasury yield %
+  sp500: number;              // S&P 500 index level
+  nasdaq: number;             // NASDAQ Composite index level
+  gdpGrowthAnnualized: number; // % annualized GDP growth
+  unemploymentRate: number;   // %
+  cpiYoY: number;             // % year-over-year CPI inflation
+  vcFundingIndex: number;     // 100 = 2019 baseline, relative VC activity
+  ipoCount: number;           // Approximate IPOs in the quarter
+  isLive: boolean;            // Whether this data came from a live API
+}
+
+export interface MarketConditions {
+  valuationMultiplier: number;       // 0.5-1.5, affects startup valuations
+  exitProbabilityMultiplier: number; // 0.3-2.0, affects exit likelihood
+  failRateMultiplier: number;        // 0.7-1.5, affects failure rates
+  lpSentimentModifier: number;       // -15 to +15, added to LP sentiment
+  dealFlowMultiplier: number;        // 0.5-1.5, affects deal pipeline size
+  ipoWindowOpen: boolean;            // Whether IPOs are viable
+  vcCompetitionLevel: number;        // 0.5-1.5, affects deal competition/valuations
+  sectorHeatMap: Record<string, number>; // Sector-specific multipliers
+  narrative: string;                 // Human-readable market description
+  educationalInsight: string;        // Teaching moment about the current conditions
+}
+
+export interface EraDefinition {
+  id: MarketEra;
+  name: string;
+  tagline: string;
+  description: string;
+  startYear: number;
+  startQuarter: number;
+  difficulty: 'easy' | 'normal' | 'hard' | 'extreme';
+  keyEvents: string[];
 }
 
 // ============ SAVE SLOTS ============

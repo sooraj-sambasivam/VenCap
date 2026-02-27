@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { useGameStore } from '@/engine/gameState'
-import type { FundType, FundStage, GeographicFocus, ScenarioId } from '@/engine/types'
+import type { FundType, FundStage, GeographicFocus, ScenarioId, MarketEra } from '@/engine/types'
 import { formatCurrency } from '@/lib/utils'
 import { SCENARIOS } from '@/engine/scenarios'
+import { getAvailableEras, isFredApiKeyConfigured } from '@/engine/economicData'
 import {
   Building2,
   Globe,
@@ -24,6 +25,8 @@ import {
   DollarSign,
   MapPin,
   Flag,
+  Calendar,
+  Radio,
 } from 'lucide-react'
 import { PageShell } from '@/components/PageShell'
 
@@ -137,6 +140,7 @@ export default function Index() {
   const [fundStage, setFundStage] = useState<FundStage | null>(null)
   const [geographicFocus, setGeographicFocus] = useState<GeographicFocus>('global')
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('sandbox')
+  const [selectedEra, setSelectedEra] = useState<MarketEra>('current')
   const [raiseTarget, setRaiseTarget] = useState(0)
   const [isFundraising, setIsFundraising] = useState(false)
   const [lpCommitments, setLpCommitments] = useState<{ name: string; amount: number }[]>([])
@@ -219,7 +223,8 @@ export default function Index() {
       rebirthCount,
       geographicFocus,
       scenarioId: selectedScenario,
-    })
+      marketEra: selectedEra,
+    } as Parameters<typeof initFund>[0])
     navigate('/dashboard')
   }
 
@@ -495,6 +500,59 @@ export default function Index() {
                   </Card>
                 )
               })}
+            </div>
+
+            {/* ERA SELECTOR */}
+            <div className="space-y-3 pt-4 border-t border-border/50">
+              <div className="text-center space-y-1">
+                <h2 className="text-lg font-semibold flex items-center justify-center gap-2">
+                  <Calendar className="h-4 w-4" /> Market Era
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Play through real economic conditions from history — or use live data.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {getAvailableEras().map((era) => {
+                  const eraDiffColors: Record<string, string> = {
+                    easy: 'bg-green-500/20 text-green-400',
+                    normal: 'bg-blue-500/20 text-blue-400',
+                    hard: 'bg-orange-500/20 text-orange-400',
+                    extreme: 'bg-red-500/20 text-red-400',
+                  }
+                  const isEraSelected = selectedEra === era.id
+                  const isLive = era.id === 'current'
+                  return (
+                    <Card
+                      key={era.id}
+                      className={`cursor-pointer transition-all duration-200 hover:border-primary/50 ${
+                        isEraSelected ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10' : 'border-border'
+                      }`}
+                      onClick={() => setSelectedEra(era.id)}
+                    >
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-semibold text-xs truncate flex items-center gap-1">
+                            {isLive && <Radio className="h-3 w-3 text-green-400" />}
+                            {era.name}
+                          </span>
+                          <Badge className={`${eraDiffColors[era.difficulty]} text-[9px] shrink-0`}>
+                            {era.startYear}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">{era.tagline}</p>
+                        {isLive && !isFredApiKeyConfigured() && (
+                          <p className="text-[9px] text-amber-400/80">Uses historical data (no API key)</p>
+                        )}
+                        {isLive && isFredApiKeyConfigured() && (
+                          <p className="text-[9px] text-green-400/80">Live FRED data enabled</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="flex justify-between">

@@ -52,6 +52,13 @@ import {
   loadFromSlot as loadSlotFromStorage,
 } from './saveSlots';
 import {
+  getSnapshotForGameMonth,
+  getLatestHistoricalSnapshot,
+  fetchLiveEconomicData,
+} from './economicData';
+import { calculateMarketConditions, describeChanges } from './marketEngine';
+import type { MarketEra, EconomicSnapshot, MarketConditions } from './types';
+import {
   BASE_FAIL_RATES,
   DEFAULT_FAIL_RATE,
   BASE_EXIT_RATES,
@@ -459,6 +466,9 @@ function captureSnapshot(state: GameState): GameSnapshot {
     scenarioWon: state.scenarioWon ?? null,
     unlockedAchievements: state.unlockedAchievements || [],
     syndicatePartners: state.syndicatePartners || [],
+    marketEra: state.marketEra ?? null,
+    currentEconomicSnapshot: state.currentEconomicSnapshot ?? null,
+    currentMarketConditions: state.currentMarketConditions ?? null,
   }));
 }
 
@@ -582,6 +592,9 @@ export const useGameStore = create<GameState>()(
       syndicatePartners: [] as SyndicateRelationship[],
       tutorialMode: false,
       tutorialStep: 0,
+      marketEra: null as MarketEra | null,
+      currentEconomicSnapshot: null as EconomicSnapshot | null,
+      currentMarketConditions: null as MarketConditions | null,
 
       // ============================================================
       // INIT FUND
@@ -589,6 +602,7 @@ export const useGameStore = create<GameState>()(
       initFund: (config) => {
         // Feature 3: Scenario support
         const scenarioId: ScenarioId = (config as { scenarioId?: ScenarioId }).scenarioId ?? 'sandbox';
+        const marketEra: MarketEra = (config as { marketEra?: MarketEra }).marketEra ?? 'current';
         const scenario = scenarioId !== 'sandbox' ? getScenario(scenarioId) : null;
         const scenarioOverrides = scenario?.fundOverrides ?? {};
 
@@ -646,6 +660,12 @@ export const useGameStore = create<GameState>()(
             ? seedStartingPortfolio(scenario)
             : [];
 
+        // Initialize economic snapshot from era
+        const initialEconomicSnapshot = marketEra === 'current'
+          ? getLatestHistoricalSnapshot()
+          : getSnapshotForGameMonth(marketEra, scenario?.startingMonth ?? 0);
+        const initialMarketConditions = calculateMarketConditions(initialEconomicSnapshot);
+
         set({
           fund,
           gamePhase: 'playing',
@@ -677,6 +697,10 @@ export const useGameStore = create<GameState>()(
           // Start tutorial for first-time players (rebirthCount === 0) if not already completed
           tutorialMode: (mergedConfig.rebirthCount || 0) === 0 && (() => { try { return !localStorage.getItem('vencap-tutorial-v3-done'); } catch { return true; } })(),
           tutorialStep: 0,
+          // Real economy
+          marketEra,
+          currentEconomicSnapshot: initialEconomicSnapshot,
+          currentMarketConditions: initialMarketConditions,
         });
       },
 
@@ -691,6 +715,32 @@ export const useGameStore = create<GameState>()(
           localStorage.setItem('vencap-tutorial-v3-done', 'true');
         }
         set({ tutorialMode: false, tutorialStep: 0 });
+      },
+
+      // ============================================================
+      // REAL ECONOMY ACTIONS
+      // ============================================================
+      setMarketEra: (era: MarketEra) => {
+        const snapshot = era === 'current'
+          ? getLatestHistoricalSnapshot()
+          : getSnapshotForGameMonth(era, get().fund?.currentMonth ?? 0);
+        const conditions = calculateMarketConditions(snapshot);
+        set({
+          marketEra: era,
+          currentEconomicSnapshot: snapshot,
+          currentMarketConditions: conditions,
+        });
+      },
+
+      fetchLiveMarketData: async () => {
+        const liveData = await fetchLiveEconomicData();
+        if (liveData) {
+          const conditions = calculateMarketConditions(liveData);
+          set({
+            currentEconomicSnapshot: liveData,
+            currentMarketConditions: conditions,
+          });
+        }
       },
 
       // ============================================================
@@ -720,6 +770,29 @@ export const useGameStore = create<GameState>()(
         const difficulty = getDifficultyModifiers(fund.skillLevel, fund.rebirthCount);
 
         fund.currentMonth++;
+
+        // ==== STEP 0.25: Update Economic Snapshot ====
+        const prevEconSnapshot = state.currentEconomicSnapshot;
+        const currentEra = state.marketEra ?? 'current';
+        const econSnapshot = currentEra === 'current'
+          ? (state.currentEconomicSnapshot ?? getLatestHistoricalSnapshot())
+          : getSnapshotForGameMonth(currentEra, fund.currentMonth);
+        const mktConditions = calculateMarketConditions(econSnapshot);
+
+        // Generate news about economic changes (every quarter)
+        if (fund.currentMonth % 3 === 0 && prevEconSnapshot) {
+          const econChanges = describeChanges(prevEconSnapshot, econSnapshot);
+          for (const change of econChanges) {
+            newNews.push({
+              id: uuid(),
+              headline: change,
+              summary: mktConditions.narrative,
+              type: 'market_trend' as const,
+              sentiment: mktConditions.lpSentimentModifier > 0 ? 'positive' as const : mktConditions.lpSentimentModifier < -5 ? 'negative' as const : 'neutral' as const,
+              month: fund.currentMonth,
+            });
+          }
+        }
 
         // ==== STEP 0.5: Deduct Monthly Management Fee ====
         // Management fee is charged on committed capital (currentSize), monthly
@@ -865,12 +938,17 @@ export const useGameStore = create<GameState>()(
 
           company.events = [...company.events, ...appliedEvents];
 
-          // ---- 2c: Failure Check (difficulty-scaled, with traction + survival bonus) ----
+          // ---- 2c: Failure Check (difficulty-scaled, with traction + survival bonus + market conditions) ----
           const monthsActive = fund.currentMonth - company.monthInvested;
           const tractionMod = getTractionFailModifier(company.pmfScore);
           const survivalMod = getSurvivalMultiplier(monthsActive);
+          // Apply real-economy market conditions: recessions increase failures
+          const marketFailMod = mktConditions.failRateMultiplier;
+          // Apply sector-specific heat map (hotter sectors fail less)
+          const sectorHeat = mktConditions.sectorHeatMap[company.sector] ?? 1.0;
+          const sectorFailMod = 1.0 + (1.0 - sectorHeat) * 0.5; // Inverse: hot sector = lower fail
           const finalFailChance = applyDifficultyToRate(
-            (BASE_FAIL_RATES[company.stage] || DEFAULT_FAIL_RATE) * failMod * tractionMod * survivalMod,
+            (BASE_FAIL_RATES[company.stage] || DEFAULT_FAIL_RATE) * failMod * tractionMod * survivalMod * marketFailMod * sectorFailMod,
             difficulty.failRateMod
           );
 
@@ -896,9 +974,11 @@ export const useGameStore = create<GameState>()(
             continue;
           }
 
-          // ---- 2d: Exit Check (difficulty-scaled, with J-curve time bonus) ----
+          // ---- 2d: Exit Check (difficulty-scaled, with J-curve time bonus + market conditions) ----
+          // Apply real-economy market conditions: bull markets = more exits
+          const marketExitMod = mktConditions.exitProbabilityMultiplier;
           let exitChance = applyDifficultyToRate(
-            (BASE_EXIT_RATES[company.stage] || DEFAULT_EXIT_RATE) * exitMod,
+            (BASE_EXIT_RATES[company.stage] || DEFAULT_EXIT_RATE) * exitMod * marketExitMod,
             difficulty.exitRateMod
           );
 
@@ -916,6 +996,8 @@ export const useGameStore = create<GameState>()(
 
             // Modify by market, PMF, relationship, co-investors
             exitMultiple *= (MARKET_EXIT_MULTIPLIERS[marketCycle] || 1.0);
+            // Real economy: valuation conditions affect exit multiples
+            exitMultiple *= mktConditions.valuationMultiplier;
             if (company.pmfScore > 60) exitMultiple *= 1.2;
             if (company.relationship > 70) exitMultiple *= 1.1;
             exitMultiple *= (1 + company.supportScore * 0.005);
@@ -1315,7 +1397,10 @@ export const useGameStore = create<GameState>()(
         // ==== STEP 6: Generate New Deals ====
         const lpEffects = getLPEffects(state.lpSentiment);
         const newDeals: Startup[] = [];
-        for (let i = 0; i < 3; i++) {
+        // Real economy: deal flow quantity varies with market conditions
+        const baseDealCount = 3;
+        const dealCount = Math.max(1, Math.min(5, Math.round(baseDealCount * mktConditions.dealFlowMultiplier)));
+        for (let i = 0; i < dealCount; i++) {
           const deal = generateStartup(fund.stage, marketCycle, fund.skillLevel, fund.geographicFocus);
           // Apply LP dealflow modifier: better reputation = slightly better deals
           if (lpEffects.dealflowMod > 1.05) {
@@ -1324,6 +1409,11 @@ export const useGameStore = create<GameState>()(
           }
           // Apply difficulty scaling: higher levels = inflated valuations
           deal.valuation = Math.round(deal.valuation * difficulty.valuationMod);
+          // Real economy: market conditions affect startup valuations
+          deal.valuation = Math.round(deal.valuation * mktConditions.valuationMultiplier);
+          // Real economy: sector-specific heat affects individual deal valuations
+          const dealSectorHeat = mktConditions.sectorHeatMap[deal.sector] ?? 1.0;
+          deal.valuation = Math.round(deal.valuation * dealSectorHeat);
           newDeals.push(deal);
         }
 
@@ -1494,6 +1584,9 @@ export const useGameStore = create<GameState>()(
           boardMeetings: cleanedBoardMeetings,
           scenarioWon,
           unlockedAchievements: allAchievements,
+          // Real economy
+          currentEconomicSnapshot: econSnapshot,
+          currentMarketConditions: mktConditions,
         });
       },
 
@@ -2268,6 +2361,10 @@ export const useGameStore = create<GameState>()(
         }
         if (merged.tutorialMode === undefined) merged.tutorialMode = false;
         if (merged.tutorialStep === undefined) merged.tutorialStep = 0;
+        // Backfill real economy fields
+        if (merged.marketEra === undefined) merged.marketEra = null;
+        if (merged.currentEconomicSnapshot === undefined) merged.currentEconomicSnapshot = null;
+        if (merged.currentMarketConditions === undefined) merged.currentMarketConditions = null;
         return merged;
       },
     }
