@@ -85,7 +85,7 @@ Plans:
 4. Player can configure management fee %, carry %, and fund life years before closing — these values affect fund economics calculations
 5. Fund II becomes available in the fund setup wizard when Fund I's net TVPI meets the defined threshold; Fund III similarly requires Fund II threshold
 6. Closing a new fund via `completeFundClose()` atomically resets economics counters (fees, carry, GP earnings) without affecting skills
-   **Plans:** 3 plans
+   **Plans:** 2/3 plans executed
 
 Plans:
 
@@ -158,7 +158,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 1. Types Foundation      | 0/TBD          | Not started | -          |
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
 | 3. Timeline Modes        | 2/2            | Complete    | 2026-03-12 |
-| 4. Fundraising Flow      | 0/3            | Not started | -          |
+| 4. Fundraising Flow      | 2/3 | In Progress|  |
 | 5. VC Skills System      | 0/TBD          | Not started | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |
 | 7. LLM Report Generation | 0/TBD          | Not started | -          |

@@ -26,10 +26,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **FUND-01**: User can pitch to LPs with commitment tracking (committed vs called capital distinction)
 - [x] **FUND-02**: First close / final close mechanics with progress indicators
-- [ ] **FUND-03**: User can configure fund terms (management fee %, carry %, fund life years)
+- [x] **FUND-03**: User can configure fund terms (management fee %, carry %, fund life years)
 - [x] **FUND-04**: Fund size negotiation based on LP interest and market conditions
 - [x] **FUND-05**: Progressive fund unlock — Fund II available after Fund I meets performance thresholds
-- [ ] **FUND-06**: Fund II/III creation resets economics counters atomically via `completeFundClose()` action
+- [x] **FUND-06**: Fund II/III creation resets economics counters atomically via `completeFundClose()` action
 - [ ] **FUND-07**: Fundraising page with dedicated UI for the LP pitching and closing flow
 
 ### Interaction Feedback
@@ -126,10 +126,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-05     | Phase 3 | Complete |
 | FUND-01     | Phase 4 | Complete |
 | FUND-02     | Phase 4 | Complete |
-| FUND-03     | Phase 4 | Pending  |
+| FUND-03     | Phase 4 | Complete |
 | FUND-04     | Phase 4 | Complete |
 | FUND-05     | Phase 4 | Complete |
-| FUND-06     | Phase 4 | Pending  |
+| FUND-06     | Phase 4 | Complete |
 | FUND-07     | Phase 4 | Pending  |
 | SKIL-01     | Phase 5 | Pending  |
 | SKIL-02     | Phase 5 | Pending  |
