@@ -1,7 +1,13 @@
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react"
-import { createPortal } from "react-dom"
-import { Button } from "@/components/ui/button"
-import { formatCurrency } from "@/lib/utils"
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type CSSProperties,
+} from "react";
+import { createPortal } from "react-dom";
+import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 import {
   Rocket,
   LayoutDashboard,
@@ -12,25 +18,25 @@ import {
   Gavel,
   HeartHandshake,
   Keyboard,
-} from "lucide-react"
+} from "lucide-react";
 
-const STORAGE_KEY = "vencap-tutorial-done-v2"
+const STORAGE_KEY = "vencap-tutorial-done-v2";
 
 interface OnboardingProps {
-  fundName: string
-  fundSize: number
+  fundName: string;
+  fundSize: number;
 }
 
-type Placement = "bottom" | "top" | "right" | "left"
+type Placement = "bottom" | "top" | "right" | "left";
 
 interface TutorialStep {
-  icon: typeof Rocket
-  title: string
-  description: string
+  icon: typeof Rocket;
+  title: string;
+  description: string;
   /** data-tour attribute value on the target element */
-  target: string
+  target: string;
   /** preferred tooltip placement relative to target */
-  placement: Placement
+  placement: Placement;
 }
 
 function getSteps(fundName: string, fundSize: number): TutorialStep[] {
@@ -98,74 +104,74 @@ function getSteps(fundName: string, fundSize: number): TutorialStep[] {
       target: "tvpi-card",
       placement: "bottom",
     },
-  ]
+  ];
 }
 
-const PAD = 8 // padding around the highlighted element
-const GAP = 12 // gap between highlight box and tooltip
-const TOOLTIP_MAX_W = 340
+const PAD = 8; // padding around the highlighted element
+const GAP = 12; // gap between highlight box and tooltip
+const TOOLTIP_MAX_W = 340;
 
 function tooltipW() {
-  return Math.min(TOOLTIP_MAX_W, window.innerWidth - 24)
+  return Math.min(TOOLTIP_MAX_W, window.innerWidth - 24);
 }
 
 interface SpotlightRect {
-  top: number
-  left: number
-  width: number
-  height: number
+  top: number;
+  left: number;
+  width: number;
+  height: number;
 }
 
 function getTargetRect(target: string): SpotlightRect | null {
-  const el = document.querySelector(`[data-tour="${target}"]`)
-  if (!el) return null
-  const r = el.getBoundingClientRect()
+  const el = document.querySelector(`[data-tour="${target}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
   return {
     top: r.top + window.scrollY,
     left: r.left + window.scrollX,
     width: r.width,
     height: r.height,
-  }
+  };
 }
 
 function computeTooltipStyle(
   rect: SpotlightRect,
   placement: Placement,
 ): CSSProperties {
-  const vw = window.innerWidth
+  const vw = window.innerWidth;
   const padded = {
     top: rect.top - PAD,
     left: rect.left - PAD,
     width: rect.width + PAD * 2,
     height: rect.height + PAD * 2,
-  }
+  };
 
-  let top = 0
-  let left = 0
+  let top = 0;
+  let left = 0;
 
   switch (placement) {
     case "bottom":
-      top = padded.top + padded.height + GAP
-      left = padded.left + padded.width / 2 - tooltipW() / 2
-      break
+      top = padded.top + padded.height + GAP;
+      left = padded.left + padded.width / 2 - tooltipW() / 2;
+      break;
     case "top":
-      top = padded.top - GAP // will subtract tooltip height via transform
-      left = padded.left + padded.width / 2 - tooltipW() / 2
-      break
+      top = padded.top - GAP; // will subtract tooltip height via transform
+      left = padded.left + padded.width / 2 - tooltipW() / 2;
+      break;
     case "right":
-      top = padded.top + padded.height / 2
-      left = padded.left + padded.width + GAP
-      break
+      top = padded.top + padded.height / 2;
+      left = padded.left + padded.width + GAP;
+      break;
     case "left":
-      top = padded.top + padded.height / 2
-      left = padded.left - GAP - tooltipW()
-      break
+      top = padded.top + padded.height / 2;
+      left = padded.left - GAP - tooltipW();
+      break;
   }
 
   // Clamp horizontal so tooltip doesn't overflow viewport
-  left = Math.max(12, Math.min(left, vw - tooltipW() - 12))
+  left = Math.max(12, Math.min(left, vw - tooltipW() - 12));
 
-  const transform = placement === "top" ? "translateY(-100%)" : undefined
+  const transform = placement === "top" ? "translateY(-100%)" : undefined;
 
   return {
     position: "absolute",
@@ -173,7 +179,7 @@ function computeTooltipStyle(
     left,
     width: tooltipW(),
     transform,
-  }
+  };
 }
 
 function computeArrowStyle(
@@ -181,8 +187,8 @@ function computeArrowStyle(
   placement: Placement,
   tooltipLeft: number,
 ): CSSProperties {
-  const centerX = rect.left + rect.width / 2
-  const arrowLeft = centerX - tooltipLeft - 6 // 6 = half of arrow size
+  const centerX = rect.left + rect.width / 2;
+  const arrowLeft = centerX - tooltipLeft - 6; // 6 = half of arrow size
 
   switch (placement) {
     case "bottom":
@@ -193,7 +199,7 @@ function computeArrowStyle(
         width: 12,
         height: 12,
         transform: "rotate(45deg)",
-      }
+      };
     case "top":
       return {
         position: "absolute",
@@ -202,7 +208,7 @@ function computeArrowStyle(
         width: 12,
         height: 12,
         transform: "rotate(45deg)",
-      }
+      };
     case "right":
       return {
         position: "absolute",
@@ -211,7 +217,7 @@ function computeArrowStyle(
         width: 12,
         height: 12,
         transform: "translateY(-50%) rotate(45deg)",
-      }
+      };
     case "left":
       return {
         position: "absolute",
@@ -220,83 +226,85 @@ function computeArrowStyle(
         width: 12,
         height: 12,
         transform: "translateY(-50%) rotate(45deg)",
-      }
+      };
   }
 }
 
 export function Onboarding({ fundName, fundSize }: OnboardingProps) {
-  const [active, setActive] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [rect, setRect] = useState<SpotlightRect | null>(null)
-  const tooltipRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [rect, setRect] = useState<SpotlightRect | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
-  const steps = getSteps(fundName, fundSize)
-  const step = steps[currentStep]
-  const isFirst = currentStep === 0
-  const isLast = currentStep === steps.length - 1
-  const StepIcon = step.icon
+  const steps = getSteps(fundName, fundSize);
+  const step = steps[currentStep];
+  const isFirst = currentStep === 0;
+  const isLast = currentStep === steps.length - 1;
+  const StepIcon = step.icon;
 
   // Check if tutorial should show
   useEffect(() => {
-    const done = localStorage.getItem(STORAGE_KEY)
+    const done = localStorage.getItem(STORAGE_KEY);
     if (!done) {
       // Small delay to let the dashboard render targets
-      const timer = setTimeout(() => setActive(true), 400)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setActive(true), 400);
+      return () => clearTimeout(timer);
     }
-  }, [])
+  }, []);
 
   // Measure target element on step change / resize / scroll
   const measure = useCallback(() => {
-    if (!active) return
-    const r = getTargetRect(steps[currentStep].target)
-    setRect(r)
-  }, [active, currentStep, steps])
+    if (!active) return;
+    const r = getTargetRect(steps[currentStep].target);
+    setRect(r);
+  }, [active, currentStep, steps]);
 
   useEffect(() => {
-    measure()
-    window.addEventListener("resize", measure)
-    window.addEventListener("scroll", measure, true)
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     return () => {
-      window.removeEventListener("resize", measure)
-      window.removeEventListener("scroll", measure, true)
-    }
-  }, [measure])
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [measure]);
 
   // Scroll target into view
   useEffect(() => {
-    if (!active) return
-    const el = document.querySelector(`[data-tour="${steps[currentStep].target}"]`)
+    if (!active) return;
+    const el = document.querySelector(
+      `[data-tour="${steps[currentStep].target}"]`,
+    );
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" })
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
       // Re-measure after scroll settles
-      const timer = setTimeout(measure, 350)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(measure, 350);
+      return () => clearTimeout(timer);
     }
-  }, [active, currentStep, steps, measure])
+  }, [active, currentStep, steps, measure]);
 
   const handleComplete = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, "true")
-    setActive(false)
-  }, [])
+    localStorage.setItem(STORAGE_KEY, "true");
+    setActive(false);
+  }, []);
 
   const handleNext = useCallback(() => {
     if (isLast) {
-      handleComplete()
+      handleComplete();
     } else {
-      setCurrentStep((prev) => prev + 1)
+      setCurrentStep((prev) => prev + 1);
     }
-  }, [isLast, handleComplete])
+  }, [isLast, handleComplete]);
 
   const handlePrevious = useCallback(() => {
-    setCurrentStep((prev) => Math.max(0, prev - 1))
-  }, [])
+    setCurrentStep((prev) => Math.max(0, prev - 1));
+  }, []);
 
   const handleSkip = useCallback(() => {
-    handleComplete()
-  }, [handleComplete])
+    handleComplete();
+  }, [handleComplete]);
 
-  if (!active || !rect) return null
+  if (!active || !rect) return null;
 
   const spotlightStyle: CSSProperties = {
     position: "absolute",
@@ -310,14 +318,14 @@ export function Onboarding({ fundName, fundSize }: OnboardingProps) {
     zIndex: 9998,
     border: "2px solid rgba(99, 102, 241, 0.5)",
     transition: "all 0.3s ease",
-  }
+  };
 
-  const tooltipStyle = computeTooltipStyle(rect, step.placement)
+  const tooltipStyle = computeTooltipStyle(rect, step.placement);
   const arrowStyle = computeArrowStyle(
     rect,
     step.placement,
     (tooltipStyle.left as number) ?? 0,
-  )
+  );
 
   return createPortal(
     <>
@@ -345,7 +353,10 @@ export function Onboarding({ fundName, fundSize }: OnboardingProps) {
         className="rounded-xl border border-border bg-card p-4 shadow-2xl"
       >
         {/* Arrow */}
-        <div style={arrowStyle} className="bg-card border-l border-t border-border" />
+        <div
+          style={arrowStyle}
+          className="bg-card border-l border-t border-border"
+        />
 
         {/* Close button */}
         <button
@@ -392,12 +403,22 @@ export function Onboarding({ fundName, fundSize }: OnboardingProps) {
           {/* Navigation */}
           <div className="flex items-center gap-2">
             {!isFirst && (
-              <Button variant="ghost" size="sm" onClick={handlePrevious} className="h-7 px-2.5 text-xs">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handlePrevious}
+                className="h-7 px-2.5 text-xs"
+              >
                 Back
               </Button>
             )}
             {isFirst && (
-              <Button variant="ghost" size="sm" onClick={handleSkip} className="h-7 px-2.5 text-xs text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSkip}
+                className="h-7 px-2.5 text-xs text-muted-foreground"
+              >
                 Skip
               </Button>
             )}
@@ -409,5 +430,5 @@ export function Onboarding({ fundName, fundSize }: OnboardingProps) {
       </div>
     </>,
     document.body,
-  )
+  );
 }

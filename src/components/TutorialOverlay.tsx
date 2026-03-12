@@ -1,7 +1,7 @@
-import { useCallback } from "react"
-import { useGameStore } from "@/engine/gameState"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useCallback } from "react";
+import { useGameStore } from "@/engine/gameState";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Rocket,
   Search,
@@ -10,15 +10,15 @@ import {
   Briefcase,
   Play,
   PartyPopper,
-} from "lucide-react"
+} from "lucide-react";
 
 // ============ TUTORIAL STEP DEFINITIONS ============
 
 interface TutorialStepDef {
-  icon: typeof Rocket
-  title: string
-  description: string
-  buttonLabel: string
+  icon: typeof Rocket;
+  title: string;
+  description: string;
+  buttonLabel: string;
 }
 
 const TUTORIAL_STEPS: TutorialStepDef[] = [
@@ -71,40 +71,40 @@ const TUTORIAL_STEPS: TutorialStepDef[] = [
       "You know the basics. Explore the other features — Incubator, Lab, Reports — and build the best fund you can!",
     buttonLabel: "Let's go!",
   },
-]
+];
 
 // ============ TUTORIAL OVERLAY COMPONENT ============
 
 interface TutorialOverlayProps {
   /** The tutorial step to show (0-6). Only renders if this matches the current tutorialStep in store. */
-  step: number
+  step: number;
 }
 
 export function TutorialOverlay({ step }: TutorialOverlayProps) {
-  const tutorialMode = useGameStore((s) => s.tutorialMode)
-  const tutorialStep = useGameStore((s) => s.tutorialStep)
-  const setTutorialStep = useGameStore((s) => s.setTutorialStep)
-  const completeTutorial = useGameStore((s) => s.completeTutorial)
+  const tutorialMode = useGameStore((s) => s.tutorialMode);
+  const tutorialStep = useGameStore((s) => s.tutorialStep);
+  const setTutorialStep = useGameStore((s) => s.setTutorialStep);
+  const completeTutorial = useGameStore((s) => s.completeTutorial);
 
   const handleNext = useCallback(() => {
     if (tutorialStep >= TUTORIAL_STEPS.length - 1) {
-      completeTutorial()
+      completeTutorial();
     } else {
-      setTutorialStep(tutorialStep + 1)
+      setTutorialStep(tutorialStep + 1);
     }
-  }, [tutorialStep, setTutorialStep, completeTutorial])
+  }, [tutorialStep, setTutorialStep, completeTutorial]);
 
   const handleSkip = useCallback(() => {
-    completeTutorial()
-  }, [completeTutorial])
+    completeTutorial();
+  }, [completeTutorial]);
 
   // Only render if tutorial is active and this is the current step
-  if (!tutorialMode || tutorialStep !== step) return null
+  if (!tutorialMode || tutorialStep !== step) return null;
 
-  const stepDef = TUTORIAL_STEPS[step]
-  if (!stepDef) return null
+  const stepDef = TUTORIAL_STEPS[step];
+  if (!stepDef) return null;
 
-  const StepIcon = stepDef.icon
+  const StepIcon = stepDef.icon;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9990] w-full max-w-md px-4">
@@ -154,7 +154,11 @@ export function TutorialOverlay({ step }: TutorialOverlayProps) {
               >
                 Skip Tutorial
               </Button>
-              <Button size="sm" onClick={handleNext} className="h-7 px-3 text-xs">
+              <Button
+                size="sm"
+                onClick={handleNext}
+                className="h-7 px-3 text-xs"
+              >
                 {stepDef.buttonLabel}
               </Button>
             </div>
@@ -162,7 +166,7 @@ export function TutorialOverlay({ step }: TutorialOverlayProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
-export { TUTORIAL_STEPS }
+export { TUTORIAL_STEPS };

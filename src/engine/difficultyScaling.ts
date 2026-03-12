@@ -3,14 +3,17 @@
 // Adjusts game parameters based on skillLevel and rebirthCount
 // ============================================================
 
-import type { DifficultyModifiers } from './types';
+import type { DifficultyModifiers } from "./types";
 
 /**
  * Returns difficulty modifiers scaled by player skill level.
  * Higher skill = harder game (more fails, fewer exits, tougher events).
  * First playthrough (skillLevel=1) is the baseline.
  */
-export function getDifficultyModifiers(skillLevel: number, rebirthCount: number): DifficultyModifiers {
+export function getDifficultyModifiers(
+  skillLevel: number,
+  rebirthCount: number,
+): DifficultyModifiers {
   // Each rebirth adds difficulty. First playthrough is easiest.
   const level = Math.max(1, skillLevel);
 
@@ -21,7 +24,7 @@ export function getDifficultyModifiers(skillLevel: number, rebirthCount: number)
   const exitRateMod = Math.max(0.6, 1.0 - (level - 1) * 0.05);
 
   // Negative events become more frequent
-  const eventFreqMod = 1.0 + (level - 1) * 0.10;
+  const eventFreqMod = 1.0 + (level - 1) * 0.1;
 
   // Valuations inflate (higher prices = lower returns)
   const valuationMod = 1.0 + (level - 1) * 0.06;
@@ -46,6 +49,9 @@ export function getDifficultyModifiers(skillLevel: number, rebirthCount: number)
  * Adjusts a base probability by the difficulty modifier.
  * Clamps result to [0, 1].
  */
-export function applyDifficultyToRate(baseRate: number, modifier: number): number {
+export function applyDifficultyToRate(
+  baseRate: number,
+  modifier: number,
+): number {
   return Math.min(1, Math.max(0, baseRate * modifier));
 }

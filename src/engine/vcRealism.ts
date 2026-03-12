@@ -3,16 +3,23 @@
 // Pure functions only. No state, no side effects.
 // ============================================================
 
-import type { FundStage, FundType, MarketCycle, Fund, Startup } from './types';
+import type { FundStage, FundType, MarketCycle, Fund, Startup } from "./types";
 
 // ============ 1. OWNERSHIP LIMITS ============
 
-export function getOwnershipLimits(stage: FundStage): { min: number; max: number } {
+export function getOwnershipLimits(stage: FundStage): {
+  min: number;
+  max: number;
+} {
   switch (stage) {
-    case 'pre_seed': return { min: 7, max: 20 };
-    case 'seed':     return { min: 5, max: 15 };
-    case 'series_a': return { min: 3, max: 12 };
-    case 'growth':   return { min: 2, max: 8 };
+    case "pre_seed":
+      return { min: 7, max: 20 };
+    case "seed":
+      return { min: 5, max: 15 };
+    case "series_a":
+      return { min: 3, max: 12 };
+    case "growth":
+      return { min: 2, max: 8 };
   }
 }
 
@@ -21,22 +28,22 @@ export function getOwnershipLimits(stage: FundStage): { min: number; max: number
 export function getCheckSizeRange(
   fundType: FundType,
   fundSize: number,
-  stage: FundStage
+  stage: FundStage,
 ): { min: number; max: number } {
   // Base % of fund per check by fund type
   const baseRanges: Record<FundType, { min: number; max: number }> = {
-    regional:      { min: 0.01, max: 0.05 },
-    national:      { min: 0.02, max: 0.08 },
-    multistage:    { min: 0.01, max: 0.10 },
+    regional: { min: 0.01, max: 0.05 },
+    national: { min: 0.02, max: 0.08 },
+    multistage: { min: 0.01, max: 0.1 },
     family_office: { min: 0.02, max: 0.15 },
   };
 
   // Stage scalar: earlier = smaller absolute check
   const stageScalar: Record<FundStage, number> = {
     pre_seed: 0.4,
-    seed:     0.65,
+    seed: 0.65,
     series_a: 1.0,
-    growth:   1.6,
+    growth: 1.6,
   };
 
   const range = baseRanges[fundType];
@@ -52,7 +59,7 @@ export function getCheckSizeRange(
 
 export function adjustOwnershipForRelationship(
   baseOwnership: number,
-  relationship: number
+  relationship: number,
 ): number {
   if (relationship > 70) {
     // High relationship: allow 25% above stage max
@@ -64,7 +71,7 @@ export function adjustOwnershipForRelationship(
   }
   // Linear interpolation between 30 and 70
   const t = (relationship - 30) / 40; // 0 at rel=30, 1 at rel=70
-  const multiplier = 1 + t * 0.25;    // 1.0x at rel=30, 1.25x at rel=70
+  const multiplier = 1 + t * 0.25; // 1.0x at rel=30, 1.25x at rel=70
   return baseOwnership * multiplier;
 }
 
@@ -72,18 +79,18 @@ export function adjustOwnershipForRelationship(
 
 export function adjustOwnershipForMarket(
   ownership: number,
-  market: MarketCycle
+  market: MarketCycle,
 ): number {
   switch (market) {
-    case 'bull':
+    case "bull":
       // Founders have leverage — no upward adjustment, cap at normal range
       return ownership;
-    case 'normal':
+    case "normal":
       return ownership;
-    case 'cooldown':
+    case "cooldown":
       // Allow 10% more ownership
-      return ownership * 1.10;
-    case 'hard':
+      return ownership * 1.1;
+    case "hard":
       // Founders desperate — allow 25% more
       return ownership * 1.25;
   }
@@ -95,30 +102,30 @@ export function calculateBuyoutAcceptance(
   company: Startup,
   offerPrice: number,
   relationship: number,
-  market: MarketCycle
+  market: MarketCycle,
 ): { accepted: boolean; probability: number } {
-  let probability = 0.10; // 10% base
+  let probability = 0.1; // 10% base
 
   // Runway boost
-  if (company.metrics.runway < 6) probability += 0.20;
+  if (company.metrics.runway < 6) probability += 0.2;
 
   // Relationship boost
   if (relationship > 70) probability += 0.15;
 
   // Low growth boost
-  if (company.metrics.growthRate < 0.05) probability += 0.10;
+  if (company.metrics.growthRate < 0.05) probability += 0.1;
 
   // Hard market boost
-  if (market === 'hard') probability += 0.15;
+  if (market === "hard") probability += 0.15;
 
   // Generous offer boost: >1.5x fair value (valuation)
-  if (offerPrice > company.valuation * 1.5) probability += 0.10;
+  if (offerPrice > company.valuation * 1.5) probability += 0.1;
 
   // Gritty founder penalty
-  if (company.founderTraits.grit > 7) probability -= 0.20;
+  if (company.founderTraits.grit > 7) probability -= 0.2;
 
   // Bull market penalty (founders have options)
-  if (market === 'bull') probability -= 0.10;
+  if (market === "bull") probability -= 0.1;
 
   // Clamp to [0, 1]
   probability = Math.min(Math.max(probability, 0), 1);
@@ -132,7 +139,7 @@ export function calculateBuyoutAcceptance(
 
 export function getValuationMultiplier(
   _stage: FundStage,
-  market: MarketCycle
+  market: MarketCycle,
 ): number {
   // Base valuation ranges (midpoint used for multiplier anchor)
   // pre_seed $2-5M → mid $3.5M
@@ -141,21 +148,28 @@ export function getValuationMultiplier(
   // growth $50-300M → mid $175M
 
   const marketMultiplier: Record<MarketCycle, number> = {
-    bull:     1.4,
-    normal:   1.0,
+    bull: 1.4,
+    normal: 1.0,
     cooldown: 0.7,
-    hard:     0.5,
+    hard: 0.5,
   };
 
   return marketMultiplier[market];
 }
 
-export function getBaseValuationRange(stage: FundStage): { min: number; max: number } {
+export function getBaseValuationRange(stage: FundStage): {
+  min: number;
+  max: number;
+} {
   switch (stage) {
-    case 'pre_seed': return { min: 2_000_000,   max: 5_000_000 };
-    case 'seed':     return { min: 5_000_000,   max: 15_000_000 };
-    case 'series_a': return { min: 15_000_000,  max: 50_000_000 };
-    case 'growth':   return { min: 50_000_000,  max: 300_000_000 };
+    case "pre_seed":
+      return { min: 2_000_000, max: 5_000_000 };
+    case "seed":
+      return { min: 5_000_000, max: 15_000_000 };
+    case "series_a":
+      return { min: 15_000_000, max: 50_000_000 };
+    case "growth":
+      return { min: 50_000_000, max: 300_000_000 };
   }
 }
 
@@ -164,7 +178,7 @@ export function getBaseValuationRange(stage: FundStage): { min: number; max: num
 export function canInvest(
   fund: Fund,
   amount: number,
-  stage: FundStage
+  stage: FundStage,
 ): { allowed: boolean; reason?: string } {
   // Check 1: enough cash
   if (amount > fund.cashAvailable) {
@@ -194,7 +208,7 @@ export function canInvest(
   const currentYear = Math.floor(fund.currentMonth / 12) + 1;
   const deploymentRatio = (fund.deployed + amount) / fund.currentSize;
 
-  if (currentYear <= 3 && deploymentRatio > 0.80) {
+  if (currentYear <= 3 && deploymentRatio > 0.8) {
     return {
       allowed: false,
       reason: `Over-deploying too early. Deploying >80% of fund in years 1-3 leaves no reserves for follow-ons. Current: ${(deploymentRatio * 100).toFixed(0)}%`,
@@ -206,19 +220,24 @@ export function canInvest(
 
 // ============ 8. INFLUENCE LEVEL FROM OWNERSHIP ============
 
-export function getInfluenceLevel(ownership: number): 'observer' | 'advisor' | 'board_seat' | 'majority' {
-  if (ownership < 25)  return 'observer';
-  if (ownership < 50)  return 'advisor';
-  if (ownership < 75)  return 'board_seat';
-  return 'majority';
+export function getInfluenceLevel(
+  ownership: number,
+): "observer" | "advisor" | "board_seat" | "majority" {
+  if (ownership < 25) return "observer";
+  if (ownership < 50) return "advisor";
+  if (ownership < 75) return "board_seat";
+  return "majority";
 }
 
 // ============ 9. FAIL/EXIT MODIFIERS FROM INFLUENCE ============
 
-export function getInfluenceModifiers(ownership: number): { failMod: number; exitMod: number } {
-  if (ownership < 10)  return { failMod: 1.0,  exitMod: 1.0  };
-  if (ownership < 25)  return { failMod: 0.90, exitMod: 1.0  }; // -10% fail
-  if (ownership < 50)  return { failMod: 0.80, exitMod: 1.10 }; // -20% fail, +10% exit
-  if (ownership < 75)  return { failMod: 0.70, exitMod: 1.15 }; // -30% fail, +15% exit
-  return                      { failMod: 0.60, exitMod: 1.20 }; // -40% fail, +20% exit (majority)
+export function getInfluenceModifiers(ownership: number): {
+  failMod: number;
+  exitMod: number;
+} {
+  if (ownership < 10) return { failMod: 1.0, exitMod: 1.0 };
+  if (ownership < 25) return { failMod: 0.9, exitMod: 1.0 }; // -10% fail
+  if (ownership < 50) return { failMod: 0.8, exitMod: 1.1 }; // -20% fail, +10% exit
+  if (ownership < 75) return { failMod: 0.7, exitMod: 1.15 }; // -30% fail, +15% exit
+  return { failMod: 0.6, exitMod: 1.2 }; // -40% fail, +20% exit (majority)
 }

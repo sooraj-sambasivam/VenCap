@@ -75,6 +75,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { generateTickSummary } from "@/engine/tickSummary";
+import { TickSummaryDialog } from "@/components/TickSummaryDialog";
+import type { TickSummary } from "@/engine/types";
 
 // ============ HELPERS ============
 
@@ -249,16 +252,48 @@ export default function Dashboard() {
   }, [portfolio]);
 
   const [advancing, setAdvancing] = useState(false);
+  const [tickSummary, setTickSummary] = useState<TickSummary | null>(null);
+  const [showTickSummary, setShowTickSummary] = useState(false);
 
   const handleAdvance = useCallback(() => {
     setAdvancing(true);
     // Let spinner render before sync computation
     requestAnimationFrame(() => {
-      const prevPortfolio = useGameStore.getState().portfolio;
+      // Capture pre-advance state for tick summary
+      const prevState = useGameStore.getState();
+      const prevPortfolio = prevState.portfolio;
+      const prevCycle = prevState.marketCycle;
+      const prevFund = prevState.fund!;
+      const prevSnapshot =
+        prevState.monthlySnapshots.length > 0
+          ? prevState.monthlySnapshots[prevState.monthlySnapshots.length - 1]
+          : null;
+
       advanceTime();
       const state = useGameStore.getState();
 
-      // Summarize what happened
+      // Generate tick summary
+      const currSnapshot =
+        state.monthlySnapshots[state.monthlySnapshots.length - 1];
+      if (currSnapshot && state.fund) {
+        const summary = generateTickSummary(
+          state.fund.currentMonth,
+          prevSnapshot,
+          currSnapshot,
+          prevPortfolio,
+          state.portfolio,
+          prevCycle,
+          state.marketCycle,
+          prevFund,
+          state.fund,
+        );
+        if (summary.items.length > 0) {
+          setTickSummary(summary);
+          setShowTickSummary(true);
+        }
+      }
+
+      // Summarize what happened via toasts (exits/failures)
       const newExits = state.portfolio.filter(
         (c) =>
           c.status === "exited" &&
@@ -1016,6 +1051,11 @@ export default function Dashboard() {
           {fund.rebirthCount > 0 && <span>Rebirths: {fund.rebirthCount}</span>}
         </div>
       </PageTransition>
+      <TickSummaryDialog
+        summary={tickSummary}
+        open={showTickSummary}
+        onClose={() => setShowTickSummary(false)}
+      />
     </PageShell>
   );
 }

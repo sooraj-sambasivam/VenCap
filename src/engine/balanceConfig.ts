@@ -4,7 +4,7 @@
 // Import these constants instead of using magic numbers.
 // ============================================================
 
-import type { FundStage } from './types';
+import type { FundStage } from "./types";
 
 // ============================================================
 // FAIL RATES (per month, by stage)
@@ -20,10 +20,10 @@ import type { FundStage } from './types';
  * - Series B+/Growth: ~20-30% lifetime fail rate => ~0.3-0.5% per month
  */
 export const BASE_FAIL_RATES: Record<FundStage, number> = {
-  pre_seed: 0.025,   // 2.5% per month — highest risk, pre-product
-  seed:     0.018,   // 1.8% per month — product risk still high
-  series_a: 0.009,   // 0.9% per month — some PMF validation
-  growth:   0.004,   // 0.4% per month — scaling risk, not survival risk
+  pre_seed: 0.025, // 2.5% per month — highest risk, pre-product
+  seed: 0.018, // 1.8% per month — product risk still high
+  series_a: 0.009, // 0.9% per month — some PMF validation
+  growth: 0.004, // 0.4% per month — scaling risk, not survival risk
 };
 
 /** Default fail rate if stage is unknown */
@@ -38,10 +38,10 @@ export const DEFAULT_FAIL_RATE = 0.015;
  * Later-stage companies are closer to exit-readiness.
  */
 export const BASE_EXIT_RATES: Record<FundStage, number> = {
-  pre_seed: 0.002,   // 0.2% per month — very rare, acqui-hires mostly
-  seed:     0.004,   // 0.4% per month — occasional early acquisition
-  series_a: 0.007,   // 0.7% per month — more acquisition interest
-  growth:   0.012,   // 1.2% per month — actively pursued by acquirers
+  pre_seed: 0.002, // 0.2% per month — very rare, acqui-hires mostly
+  seed: 0.004, // 0.4% per month — occasional early acquisition
+  series_a: 0.007, // 0.7% per month — more acquisition interest
+  growth: 0.012, // 1.2% per month — actively pursued by acquirers
 };
 
 /** Default exit rate if stage is unknown */
@@ -66,9 +66,9 @@ export const EXIT_PEAK_START_MONTH = 60;
 export const EXIT_PEAK_END_MONTH = 84;
 
 /** Per-month exit rate bonus for each month past EXIT_RAMP_START_MONTH */
-export const EXIT_RAMP_RATE = 0.0015;      // months 37-60
-export const EXIT_PEAK_RATE = 0.0020;       // months 61-84
-export const EXIT_TAPER_RATE = 0.0010;      // months 85+
+export const EXIT_RAMP_RATE = 0.0015; // months 37-60
+export const EXIT_PEAK_RATE = 0.002; // months 61-84
+export const EXIT_TAPER_RATE = 0.001; // months 85+
 
 // ============================================================
 // TRACTION (PMF) MODIFIERS
@@ -79,13 +79,13 @@ export const EXIT_TAPER_RATE = 0.0010;      // months 85+
  * This stacks with the existing pmfScore > 70 fail modifier in advanceTime.
  */
 export const HIGH_TRACTION_THRESHOLD = 70;
-export const HIGH_TRACTION_FAIL_MULTIPLIER = 0.50;   // 50% lower fail rate
+export const HIGH_TRACTION_FAIL_MULTIPLIER = 0.5; // 50% lower fail rate
 
 /**
  * Companies with very low traction are more likely to fail.
  */
 export const LOW_TRACTION_THRESHOLD = 30;
-export const LOW_TRACTION_FAIL_MULTIPLIER = 1.30;     // 30% higher fail rate
+export const LOW_TRACTION_FAIL_MULTIPLIER = 1.3; // 30% higher fail rate
 
 // ============================================================
 // SURVIVAL BONUS
@@ -100,8 +100,8 @@ export const LOW_TRACTION_FAIL_MULTIPLIER = 1.30;     // 30% higher fail rate
  *   survivalMultiplier = max(SURVIVAL_FLOOR, 1 - (monthsSurvived - SURVIVAL_START) * SURVIVAL_RATE_PER_MONTH)
  */
 export const SURVIVAL_BONUS_START_MONTH = 48;
-export const SURVIVAL_BONUS_RATE_PER_MONTH = 0.008;  // 0.8% reduction per month past threshold
-export const SURVIVAL_BONUS_FLOOR = 0.30;             // minimum multiplier (never below 30% of base)
+export const SURVIVAL_BONUS_RATE_PER_MONTH = 0.008; // 0.8% reduction per month past threshold
+export const SURVIVAL_BONUS_FLOOR = 0.3; // minimum multiplier (never below 30% of base)
 
 // ============================================================
 // MARKET CYCLE EXIT MODIFIERS
@@ -142,7 +142,11 @@ export function getExitTimeBonus(monthsActive: number): number {
     const rampMonths = EXIT_PEAK_START_MONTH - EXIT_RAMP_START_MONTH;
     const peakMonths = EXIT_PEAK_END_MONTH - EXIT_PEAK_START_MONTH;
     const taperMonths = monthsActive - EXIT_PEAK_END_MONTH;
-    return rampMonths * EXIT_RAMP_RATE + peakMonths * EXIT_PEAK_RATE + taperMonths * EXIT_TAPER_RATE;
+    return (
+      rampMonths * EXIT_RAMP_RATE +
+      peakMonths * EXIT_PEAK_RATE +
+      taperMonths * EXIT_TAPER_RATE
+    );
   }
 }
 

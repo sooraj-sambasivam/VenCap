@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { useGameStore } from '@/engine/gameState'
-import { formatCurrency } from '@/lib/utils'
-import type { IncubatorBatch, IncubatorCompany } from '@/engine/types'
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useGameStore } from "@/engine/gameState";
+import { formatCurrency } from "@/lib/utils";
+import type { IncubatorBatch, IncubatorCompany } from "@/engine/types";
 import {
   ArrowLeft,
   Rocket,
@@ -21,27 +21,27 @@ import {
   ChevronUp,
   Sparkles,
   CircleDot,
-} from 'lucide-react'
-import { PageShell } from '@/components/PageShell'
+} from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 
 // ============ CONSTANTS ============
 
 const MENTORING_ACTIONS = [
-  { id: 'refine_pitch', label: 'Refine Pitch', icon: MessageSquare },
-  { id: 'intro_advisors', label: 'Intro Advisors', icon: Users },
-  { id: 'gtm_plan', label: 'GTM Plan', icon: Map },
-] as const
+  { id: "refine_pitch", label: "Refine Pitch", icon: MessageSquare },
+  { id: "intro_advisors", label: "Intro Advisors", icon: Users },
+  { id: "gtm_plan", label: "GTM Plan", icon: Map },
+] as const;
 
 function traitColor(value: number): string {
-  if (value >= 8) return 'bg-green-500'
-  if (value >= 5) return 'bg-yellow-500'
-  return 'bg-red-500'
+  if (value >= 8) return "bg-green-500";
+  if (value >= 5) return "bg-yellow-500";
+  return "bg-red-500";
 }
 
 // ============ COMPONENT ============
 
 export default function Incubator() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const {
     fund,
     gamePhase,
@@ -51,51 +51,55 @@ export default function Incubator() {
     launchIncubator,
     mentorIncubatorCompany,
     graduateIncubator,
-  } = useGameStore()
+  } = useGameStore();
 
-  const [expandedBatchIndex, setExpandedBatchIndex] = useState<number | null>(null)
-  const [launching, setLaunching] = useState(false)
-  const [graduating, setGraduating] = useState(false)
-  const [showGraduateConfirm, setShowGraduateConfirm] = useState(false)
+  const [expandedBatchIndex, setExpandedBatchIndex] = useState<number | null>(
+    null,
+  );
+  const [launching, setLaunching] = useState(false);
+  const [graduating, setGraduating] = useState(false);
+  const [showGraduateConfirm, setShowGraduateConfirm] = useState(false);
 
   useEffect(() => {
-    if (!fund || gamePhase === 'setup') {
-      navigate('/', { replace: true })
+    if (!fund || gamePhase === "setup") {
+      navigate("/", { replace: true });
     }
-  }, [fund, gamePhase, navigate])
+  }, [fund, gamePhase, navigate]);
 
-  if (!fund) return null
+  if (!fund) return null;
 
-  const costPerYear = fund.currentSize * 0.01
-  const canLaunch = !activeIncubator && fund.cashAvailable >= costPerYear
-  const pastBatches = incubatorBatches.filter((b) => b.graduated)
+  const costPerYear = fund.currentSize * 0.01;
+  const canLaunch = !activeIncubator && fund.cashAvailable >= costPerYear;
+  const pastBatches = incubatorBatches.filter((b) => b.graduated);
 
   // Count incubator-origin portfolio companies
-  const incubatorPortfolioCount = portfolio.filter((c) => c.origin === 'incubator').length
+  const incubatorPortfolioCount = portfolio.filter(
+    (c) => c.origin === "incubator",
+  ).length;
 
   function handleLaunch() {
-    setLaunching(true)
+    setLaunching(true);
     requestAnimationFrame(() => {
-      launchIncubator()
-      setLaunching(false)
-    })
+      launchIncubator();
+      setLaunching(false);
+    });
   }
 
   function handleMentor(companyId: string, action: string) {
-    mentorIncubatorCompany(companyId, action)
+    mentorIncubatorCompany(companyId, action);
   }
 
   function handleGraduate() {
-    setShowGraduateConfirm(false)
-    setGraduating(true)
+    setShowGraduateConfirm(false);
+    setGraduating(true);
     requestAnimationFrame(() => {
-      graduateIncubator()
-      setGraduating(false)
-    })
+      graduateIncubator();
+      setGraduating(false);
+    });
   }
 
   function toggleBatch(index: number) {
-    setExpandedBatchIndex((prev) => (prev === index ? null : index))
+    setExpandedBatchIndex((prev) => (prev === index ? null : index));
   }
 
   return (
@@ -111,7 +115,9 @@ export default function Incubator() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">Incubator Program</h1>
             {activeIncubator ? (
-              <Badge className="bg-green-600 text-green-100">Active Batch</Badge>
+              <Badge className="bg-green-600 text-green-100">
+                Active Batch
+              </Badge>
             ) : (
               <Badge variant="secondary">No Active Batch</Badge>
             )}
@@ -120,7 +126,8 @@ export default function Incubator() {
             Cost: {formatCurrency(costPerYear)} per year (1% of fund)
             {incubatorPortfolioCount > 0 && (
               <span className="ml-3">
-                {incubatorPortfolioCount} graduate{incubatorPortfolioCount !== 1 ? 's' : ''} in portfolio
+                {incubatorPortfolioCount} graduate
+                {incubatorPortfolioCount !== 1 ? "s" : ""} in portfolio
               </span>
             )}
           </p>
@@ -131,8 +138,12 @@ export default function Incubator() {
             disabled={!canLaunch || launching}
             className="gap-2"
           >
-            {launching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-            {launching ? 'Launching...' : 'Launch New Batch'}
+            {launching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Rocket className="h-4 w-4" />
+            )}
+            {launching ? "Launching..." : "Launch New Batch"}
           </Button>
         )}
       </div>
@@ -153,8 +164,12 @@ export default function Incubator() {
               className="gap-2"
               disabled={graduating}
             >
-              {graduating ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
-              {graduating ? 'Graduating...' : 'Graduate Batch'}
+              {graduating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <GraduationCap className="h-4 w-4" />
+              )}
+              {graduating ? "Graduating..." : "Graduate Batch"}
             </Button>
 
             {/* Graduate Confirmation Dialog */}
@@ -163,10 +178,16 @@ export default function Incubator() {
                 <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
                   <h3 className="text-lg font-bold">Graduate This Batch?</h3>
                   <p className="text-sm text-muted-foreground">
-                    This will finalize the current incubator batch. Companies will be added to your portfolio and you cannot undo this action.
+                    This will finalize the current incubator batch. Companies
+                    will be added to your portfolio and you cannot undo this
+                    action.
                   </p>
                   <div className="flex gap-3">
-                    <Button variant="outline" className="flex-1" onClick={() => setShowGraduateConfirm(false)}>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowGraduateConfirm(false)}
+                    >
                       Cancel
                     </Button>
                     <Button className="flex-1" onClick={handleGraduate}>
@@ -192,10 +213,12 @@ export default function Incubator() {
         <Card>
           <CardContent className="py-12 text-center">
             <Lightbulb className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground mb-1">No active incubator batch.</p>
+            <p className="text-muted-foreground mb-1">
+              No active incubator batch.
+            </p>
             <p className="text-sm text-muted-foreground">
               {canLaunch
-                ? 'Launch a new batch to mentor 2-4 early-stage companies.'
+                ? "Launch a new batch to mentor 2-4 early-stage companies."
                 : `Insufficient funds. Need ${formatCurrency(costPerYear)} to launch.`}
             </p>
           </CardContent>
@@ -217,12 +240,13 @@ export default function Incubator() {
           ))
         ) : (
           <p className="text-sm text-muted-foreground">
-            No past batches yet. Launch and graduate your first batch to see results here.
+            No past batches yet. Launch and graduate your first batch to see
+            results here.
           </p>
         )}
       </div>
     </PageShell>
-  )
+  );
 }
 
 // ============ INCUBATOR COMPANY CARD ============
@@ -231,20 +255,22 @@ function IncubatorCompanyCard({
   company,
   onMentor,
 }: {
-  company: IncubatorCompany
-  onMentor: (companyId: string, action: string) => void
+  company: IncubatorCompany;
+  onMentor: (companyId: string, action: string) => void;
 }) {
-  const { startup, mentoringActions, graduated } = company
-  const traits = startup.founderTraits
+  const { startup, mentoringActions, graduated } = company;
+  const traits = startup.founderTraits;
 
   return (
-    <Card className={graduated ? 'border-green-500/30' : ''}>
+    <Card className={graduated ? "border-green-500/30" : ""}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             {startup.name}
             {graduated && (
-              <Badge className="bg-green-600 text-green-100 text-[10px]">Graduated</Badge>
+              <Badge className="bg-green-600 text-green-100 text-[10px]">
+                Graduated
+              </Badge>
             )}
           </CardTitle>
           <Badge variant="outline" className="text-xs">
@@ -255,7 +281,9 @@ function IncubatorCompanyCard({
       <CardContent className="space-y-4">
         {/* Founder Traits Mini Bars */}
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-muted-foreground">Founder Traits</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Founder Traits
+          </p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <TraitBar label="Grit" value={traits.grit} />
             <TraitBar label="Clarity" value={traits.clarity} />
@@ -272,7 +300,9 @@ function IncubatorCompanyCard({
           </div>
           <div>
             <span className="text-muted-foreground">Growth</span>
-            <p className="font-medium">{(startup.metrics.growthRate * 100).toFixed(0)}%/mo</p>
+            <p className="font-medium">
+              {(startup.metrics.growthRate * 100).toFixed(0)}%/mo
+            </p>
           </div>
           <div>
             <span className="text-muted-foreground">Runway</span>
@@ -284,16 +314,18 @@ function IncubatorCompanyCard({
 
         {/* Mentoring Actions */}
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Mentoring Actions</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            Mentoring Actions
+          </p>
           <div className="flex flex-wrap gap-2">
             {MENTORING_ACTIONS.map((action) => {
-              const taken = mentoringActions.includes(action.id)
-              const Icon = action.icon
+              const taken = mentoringActions.includes(action.id);
+              const Icon = action.icon;
               return (
                 <Button
                   key={action.id}
                   size="sm"
-                  variant={taken ? 'default' : 'secondary'}
+                  variant={taken ? "default" : "secondary"}
                   className="gap-1.5 text-xs"
                   disabled={taken}
                   onClick={() => onMentor(startup.id, action.id)}
@@ -305,34 +337,39 @@ function IncubatorCompanyCard({
                   )}
                   {action.label}
                 </Button>
-              )
+              );
             })}
           </div>
           <p className="text-[10px] text-muted-foreground">
-            {mentoringActions.length} of {MENTORING_ACTIONS.length} actions taken
+            {mentoringActions.length} of {MENTORING_ACTIONS.length} actions
+            taken
           </p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // ============ TRAIT BAR ============
 
 function TraitBar({ label, value }: { label: string; value: number }) {
-  const widthPercent = (value / 10) * 100
+  const widthPercent = (value / 10) * 100;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-muted-foreground w-12 shrink-0">{label}</span>
+      <span className="text-[10px] text-muted-foreground w-12 shrink-0">
+        {label}
+      </span>
       <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
         <div
           className={`h-full rounded-full ${traitColor(value)}`}
           style={{ width: `${widthPercent}%` }}
         />
       </div>
-      <span className="text-[10px] text-muted-foreground w-4 text-right">{value}</span>
+      <span className="text-[10px] text-muted-foreground w-4 text-right">
+        {value}
+      </span>
     </div>
-  )
+  );
 }
 
 // ============ PAST BATCH ROW ============
@@ -343,10 +380,10 @@ function PastBatchRow({
   isExpanded,
   onToggle,
 }: {
-  batch: IncubatorBatch
-  index: number
-  isExpanded: boolean
-  onToggle: () => void
+  batch: IncubatorBatch;
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
   return (
     <Card>
@@ -355,7 +392,9 @@ function PastBatchRow({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CircleDot className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Batch {index + 1} — Year {batch.year}</span>
+              <span className="font-medium">
+                Batch {index + 1} — Year {batch.year}
+              </span>
               <Badge variant="secondary" className="text-xs">
                 {batch.companies.length} companies
               </Badge>
@@ -396,5 +435,5 @@ function PastBatchRow({
         </div>
       )}
     </Card>
-  )
+  );
 }

@@ -4,18 +4,18 @@
 
 React Router v7 with 9 routes + a catch-all redirect:
 
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/` | Index | Fund setup wizard |
-| `/dashboard` | Dashboard | Command center, time advancement |
-| `/deals` | Deals | Deal pipeline, investment decisions |
-| `/portfolio` | Portfolio | Active investment management |
-| `/incubator` | Incubator | Batch mentoring program |
-| `/lab` | Lab | Venture studio creation flow |
-| `/news` | News | Market intelligence feed |
-| `/reports` | Reports | Annual LP performance reports |
-| `/results` | Results | End-of-fund scorecard |
-| `*` | → `/` | Catch-all redirect |
+| Route        | Page      | Purpose                             |
+| ------------ | --------- | ----------------------------------- |
+| `/`          | Index     | Fund setup wizard                   |
+| `/dashboard` | Dashboard | Command center, time advancement    |
+| `/deals`     | Deals     | Deal pipeline, investment decisions |
+| `/portfolio` | Portfolio | Active investment management        |
+| `/incubator` | Incubator | Batch mentoring program             |
+| `/lab`       | Lab       | Venture studio creation flow        |
+| `/news`      | News      | Market intelligence feed            |
+| `/reports`   | Reports   | Annual LP performance reports       |
+| `/results`   | Results   | End-of-fund scorecard               |
+| `*`          | → `/`     | Catch-all redirect                  |
 
 **Layout shell** (`App.tsx`): `BrowserRouter` → `TooltipProvider` → `NavBar` (sticky) → page content area (`pt-14` to clear nav) → `Toaster` (sonner).
 
@@ -35,6 +35,7 @@ React Router v7 with 9 routes + a catch-all redirect:
 On completion, calls `initFund()` and redirects to `/dashboard`.
 
 **Edge cases handled:**
+
 - If fund already exists (`gamePhase !== 'setup'`), auto-redirects to `/dashboard`
 - Rebirth banner shown if `rebirthCount > 0`, displaying inherited skill level
 - LP animation uses `setTimeout` + `forEach` (not `setInterval`) to avoid closure bugs
@@ -46,27 +47,32 @@ On completion, calls `initFund()` and redirects to `/dashboard`.
 The main hub. 9 sections top-to-bottom:
 
 **1. Fund Header**
+
 - Fund name, type badge, stage badge, market cycle badge (color-coded), LP sentiment pill
 
 **2. Key Metrics** (4-card grid)
+
 - Fund size (total raised)
 - Cash available (with % of fund)
 - TVPI (green ≥2x, yellow ≥1x, red <1x)
 - Deployment (% deployed + absolute dollar amount)
 
 **3. Portfolio Summary** (4 cards)
+
 - Active companies
 - Exits (with total return amount)
 - Write-offs (with total loss)
 - Deals reviewed / passed (lifetime stats)
 
 **4. Charts** (rendered after month 1)
+
 - Portfolio Value Over Time (dual-line: value + cash)
 - Deployment Pace (area chart + ideal pace reference line)
 - LP Sentiment Trend (line chart with green/red zones)
 - Sector Allocation (pie chart)
 
 **5. Alerts Panel** (conditional)
+
 - Follow-on opportunities count
 - Pending decisions count
 - Secondary offers count
@@ -79,6 +85,7 @@ The main hub. 9 sections top-to-bottom:
 **8. Quick Actions** — 4 buttons: Review Deals, Manage Portfolio, Incubator, Venture Lab
 
 **9. Advance Time Button**
+
 - Primary CTA: "Advance to [Month] Year [Y]"
 - Shows active company count + pending items
 - Triggers `advanceTime()`, then displays toast with exit/failure summary
@@ -91,6 +98,7 @@ The main hub. 9 sections top-to-bottom:
 ### Deals — Deal Flow & Investment
 
 **Pipeline display** with filter + sort controls:
+
 - **Sector filter** — Dropdown with all 15 sectors
 - **Stage filter** — Pre-seed, Seed, Series A, Growth, All
 - **Sort** — Valuation (asc/desc), Growth Rate (asc/desc), Name
@@ -103,6 +111,7 @@ Each deal renders as a `DealCard` with Pass/Invest buttons. Invest opens `Invest
 ### Portfolio — Investment Management
 
 **Company list** with expandable detail rows. Each row shows:
+
 - Name, origin badge, status badge
 - Invested amount, ownership %, current value, multiple
 - Founder state, PMF score
@@ -112,25 +121,27 @@ Each deal renders as a `DealCard` with Pass/Invest buttons. Invest opens `Invest
 
 **Expanded detail** uses Tabs:
 
-| Tab | Content |
-|-----|---------|
-| **Actions** | 3 tiers: Basic (always), Advanced (advisor+), Studio (lab/buyout origin) |
-| **Events** | Chronological timeline with severity badges, sentiment dots |
-| **Follow-On** | Round details, amount slider, new ownership preview, skip penalty |
-| **Secondary** | Buyer offer details, cash calculation, sell/reject |
-| **Decisions** | Multiple-choice company decisions with effect previews |
-| **Team** | Hired talent roster with role, reputation, salary |
+| Tab           | Content                                                                  |
+| ------------- | ------------------------------------------------------------------------ |
+| **Actions**   | 3 tiers: Basic (always), Advanced (advisor+), Studio (lab/buyout origin) |
+| **Events**    | Chronological timeline with severity badges, sentiment dots              |
+| **Follow-On** | Round details, amount slider, new ownership preview, skip penalty        |
+| **Secondary** | Buyer offer details, cash calculation, sell/reject                       |
+| **Decisions** | Multiple-choice company decisions with effect previews                   |
+| **Team**      | Hired talent roster with role, reputation, salary                        |
 
 **Action tiers:**
-- *Basic*: Connect Talent, Make Intros, Give Advice
-- *Advanced*: Hire Executive, Force Focus, Restructure Burn, Replace GTM, Founder Intervention
-- *Studio*: Engineering Sprint, GTM Sprint, Product Sprint, Capital Injection
+
+- _Basic_: Connect Talent, Make Intros, Give Advice
+- _Advanced_: Hire Executive, Force Focus, Restructure Burn, Replace GTM, Founder Intervention
+- _Studio_: Engineering Sprint, GTM Sprint, Product Sprint, Capital Injection
 
 ---
 
 ### Incubator — Batch Mentoring
 
 **Active batch** displays 2-4 company cards:
+
 - Founder trait bars (grit, clarity, charisma, experience)
 - Metrics: MRR, growth rate, runway
 - 3 one-time mentoring actions: Refine Pitch, Intro Advisors, GTM Plan
@@ -160,6 +171,7 @@ Spun-out companies enter portfolio with origin `lab`, 40-80% ownership, and perm
 ### News — Market Intelligence
 
 Chronological feed (newest first). Each card shows:
+
 - Sentiment dot (green/red/blue)
 - Type badge (Funding Round, Exit, Market Trend, Cycle Change, Regulation, Scandal)
 - Portfolio-related indicator
@@ -174,6 +186,7 @@ Chronological feed (newest first). Each card shows:
 **Report list** with expandable rows. Collapsed: year, TVPI badge, IRR, one-liner.
 
 **Expanded full report** (8 sections):
+
 1. Letter from GP — Tone-adjusted narrative
 2. Key Metrics — TVPI, IRR, cash position, exit count
 3. Top Performers — Best companies by multiple
@@ -203,18 +216,23 @@ Shown when `gamePhase === 'ended'` (month 120):
 ## Shared Components
 
 ### NavBar
+
 Sticky top navigation. Desktop: horizontal links. Mobile: hamburger → Sheet drawer. Shows current month/year. Active route highlighting. Hidden during setup phase.
 
 ### DealCard
+
 Full startup display card. Sections: founder name + traits (progress bars), metrics grid (MRR, growth, churn, burn, runway), unit economics (CAC, LTV, LTV:CAC, gross margin), market data (TAM, competition), signals (strengths as green pills, risks as yellow, red flags as red), DD notes (expandable), co-investors with tier indicators, founder willingness bar, Pass/Invest CTAs.
 
 ### InvestModal
+
 shadcn Dialog. Investment amount slider (range from `getCheckSizeRange`), real-time ownership calculator, ownership range warnings (stage-specific), influence level preview (observer → majority), co-investor display, founder willingness risk alert, validation gating.
 
 ### Charts
+
 4 Recharts components: `PortfolioValueChart` (dual-line), `DeploymentPaceChart` (area + reference), `LPSentimentChart` (line with zones), `SectorAllocationChart` (pie). Dark-themed with indigo/emerald/rose/amber palette. Responsive containers.
 
 ### Onboarding
+
 5-step modal tutorial: Welcome, Dashboard intro, Deal review, Time advancement, Goal. localStorage persistence, "don't show again" checkbox, step indicator dots.
 
 ---
@@ -246,6 +264,7 @@ No Redux, no Context API. Single store, single source of truth. Persist middlewa
 ## UI Patterns
 
 **Color coding:**
+
 - Green → positive (exits, gains, excellent sentiment, high PMF)
 - Red → negative (failures, losses, critical sentiment, red flags)
 - Yellow → warning (dilution, concerns, risks)

@@ -3,8 +3,13 @@
 // Pure functions. No side effects.
 // ============================================================
 
-import type { DynamicEvent, PortfolioCompany, MarketCycle, StartupRegion } from './types';
-import { uuid, randomBetween, randomInt, pickRandom } from '@/lib/utils';
+import type {
+  DynamicEvent,
+  PortfolioCompany,
+  MarketCycle,
+  StartupRegion,
+} from "./types";
+import { uuid, randomBetween, randomInt, pickRandom } from "@/lib/utils";
 
 // ============================================================
 // EVENT TEMPLATES
@@ -12,11 +17,16 @@ import { uuid, randomBetween, randomInt, pickRandom } from '@/lib/utils';
 
 interface EventTemplate {
   type: string;
-  sentiment: 'positive' | 'negative';
+  sentiment: "positive" | "negative";
   baseProbability: number;
-  probabilityModifiers: (company: PortfolioCompany, market: MarketCycle) => number;
+  probabilityModifiers: (
+    company: PortfolioCompany,
+    market: MarketCycle,
+  ) => number;
   severityChance: { minor: number; moderate: number; severe: number };
-  generateEffects: (severity: 'minor' | 'moderate' | 'severe') => DynamicEvent['effects'];
+  generateEffects: (
+    severity: "minor" | "moderate" | "severe",
+  ) => DynamicEvent["effects"];
   titleTemplates: string[];
   descriptionTemplates: (company: PortfolioCompany) => string[];
 }
@@ -25,28 +35,29 @@ interface EventTemplate {
 
 const NEGATIVE_EVENTS: EventTemplate[] = [
   {
-    type: 'founder_conflict',
-    sentiment: 'negative',
+    type: "founder_conflict",
+    sentiment: "negative",
     baseProbability: 0.03,
     probabilityModifiers: (c, _m) => {
       let mod = 0;
       if (c.relationship < 30) mod += 0.02;
-      if (c.founderState === 'defensive') mod += 0.01;
+      if (c.founderState === "defensive") mod += 0.01;
       return mod;
     },
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         relationshipMod: -randomInt(10, 20) * s,
         failChanceMod: randomBetween(0.05, 0.15) * s,
-        growthMod: -randomBetween(0.05, 0.10) * s,
+        growthMod: -randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Founder Conflict Escalates',
-      'Leadership Tensions Surface',
-      'Co-founder Disagreement Deepens',
+      "Founder Conflict Escalates",
+      "Leadership Tensions Surface",
+      "Co-founder Disagreement Deepens",
     ],
     descriptionTemplates: (c) => [
       `${c.founderName} and the CTO are clashing over product direction. The engineering team is caught in the middle, and sprint velocity has dropped 30%.`,
@@ -55,8 +66,8 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'product_setback',
-    sentiment: 'negative',
+    type: "product_setback",
+    sentiment: "negative",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
       let mod = 0;
@@ -65,17 +76,18 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.4, moderate: 0.4, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         mrrMod: -randomBetween(0.05, 0.15) * s,
         pmfMod: -randomInt(5, 10) * s,
-        failChanceMod: randomBetween(0.05, 0.10) * s,
+        failChanceMod: randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Major Product Setback',
-      'Product Launch Delayed',
-      'Critical Bug Found in Production',
+      "Major Product Setback",
+      "Product Launch Delayed",
+      "Critical Bug Found in Production",
     ],
     descriptionTemplates: (c) => [
       `${c.name}'s latest release introduced a critical data integrity issue affecting enterprise customers. The team is in all-hands mode to fix it, but two large accounts are evaluating alternatives.`,
@@ -84,8 +96,8 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'key_employee_departure',
-    sentiment: 'negative',
+    type: "key_employee_departure",
+    sentiment: "negative",
     baseProbability: 0.025,
     probabilityModifiers: (c, _m) => {
       let mod = 0;
@@ -94,16 +106,17 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.35, moderate: 0.45, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: -randomBetween(0.05, 0.10) * s,
+        growthMod: -randomBetween(0.05, 0.1) * s,
         mrrMod: -randomBetween(0.03, 0.08) * s,
       };
     },
     titleTemplates: [
-      'Key Employee Departs',
-      'Senior Leader Leaves for Competitor',
-      'VP Engineering Resignation',
+      "Key Employee Departs",
+      "Senior Leader Leaves for Competitor",
+      "VP Engineering Resignation",
     ],
     descriptionTemplates: (c) => [
       `${c.name}'s VP of Engineering just accepted a role at a FAANG company. Three other engineers are rumored to be considering following. The product roadmap is at risk.`,
@@ -112,22 +125,23 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'new_competitor',
-    sentiment: 'negative',
+    type: "new_competitor",
+    sentiment: "negative",
     baseProbability: 0.03,
     probabilityModifiers: (_c, _m) => 0,
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         growthMod: -randomBetween(0.05, 0.15) * s,
         mrrMod: -randomBetween(0.02, 0.05) * s,
       };
     },
     titleTemplates: [
-      'New Competitor Enters Market',
-      'Well-Funded Rival Launches',
-      'Incumbent Pivots Into Space',
+      "New Competitor Enters Market",
+      "Well-Funded Rival Launches",
+      "Incumbent Pivots Into Space",
     ],
     descriptionTemplates: (c) => [
       `A YC-backed startup just launched a competing product to ${c.name} with a $15M seed round and aggressive pricing. They're offering free migrations to ${c.name}'s customers.`,
@@ -136,27 +150,28 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'ceo_burnout',
-    sentiment: 'negative',
+    type: "ceo_burnout",
+    sentiment: "negative",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
       let mod = 0;
-      if (c.founderState === 'burned_out') mod += 0.02;
+      if (c.founderState === "burned_out") mod += 0.02;
       return mod;
     },
     severityChance: { minor: 0.2, moderate: 0.4, severe: 0.4 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: -randomBetween(0.10, 0.20) * s,
-        failChanceMod: randomBetween(0.10, 0.20) * s,
+        growthMod: -randomBetween(0.1, 0.2) * s,
+        failChanceMod: randomBetween(0.1, 0.2) * s,
         relationshipMod: -randomInt(5, 10) * s,
       };
     },
     titleTemplates: [
-      'CEO Showing Signs of Burnout',
-      'Founder Health Concerns',
-      'CEO Takes Medical Leave',
+      "CEO Showing Signs of Burnout",
+      "Founder Health Concerns",
+      "CEO Takes Medical Leave",
     ],
     descriptionTemplates: (c) => [
       `${c.founderName} has been working 100-hour weeks for 18 months straight. They missed the last two board calls and their decision-making quality is visibly declining.`,
@@ -165,17 +180,17 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'press_scandal',
-    sentiment: 'negative',
+    type: "press_scandal",
+    sentiment: "negative",
     baseProbability: 0.01,
     probabilityModifiers: (_c, _m) => 0,
     severityChance: { minor: 0.7, moderate: 0.0, severe: 0.3 },
     generateEffects: (severity) => {
-      if (severity === 'severe') {
+      if (severity === "severe") {
         return {
           relationshipMod: -15,
           failChanceMod: 0.15,
-          mrrMod: -0.10,
+          mrrMod: -0.1,
           pmfMod: -10,
         };
       }
@@ -185,9 +200,9 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
       };
     },
     titleTemplates: [
-      'Negative Press Coverage',
-      'Company Featured in Exposé',
-      'PR Crisis Unfolds',
+      "Negative Press Coverage",
+      "Company Featured in Exposé",
+      "PR Crisis Unfolds",
     ],
     descriptionTemplates: (c) => [
       `A tech journalist published an unflattering piece about ${c.name}'s workplace culture. Former employees are sharing stories on social media, and it's gaining traction.`,
@@ -196,25 +211,26 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'market_headwind',
-    sentiment: 'negative',
+    type: "market_headwind",
+    sentiment: "negative",
     baseProbability: 0.04,
     probabilityModifiers: (_c, m) => {
-      if (m === 'cooldown') return 0.02;
-      if (m === 'hard') return 0.04;
+      if (m === "cooldown") return 0.02;
+      if (m === "hard") return 0.04;
       return 0;
     },
     severityChance: { minor: 0.4, moderate: 0.4, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         growthMod: -randomBetween(0.05, 0.15) * s,
       };
     },
     titleTemplates: [
-      'Market Headwinds Intensify',
-      'Sector Sentiment Shifts Negative',
-      'Industry Downturn Impacts Pipeline',
+      "Market Headwinds Intensify",
+      "Sector Sentiment Shifts Negative",
+      "Industry Downturn Impacts Pipeline",
     ],
     descriptionTemplates: (c) => [
       `Enterprise budgets in ${c.sector} are getting slashed across the board. ${c.name}'s pipeline is seeing longer deal cycles and more pushback on pricing.`,
@@ -223,25 +239,26 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'regulatory_issue',
-    sentiment: 'negative',
+    type: "regulatory_issue",
+    sentiment: "negative",
     baseProbability: 0.01,
     probabilityModifiers: (c, _m) => {
-      if (c.sector === 'Fintech' || c.sector === 'HealthTech') return 0.02;
+      if (c.sector === "Fintech" || c.sector === "HealthTech") return 0.02;
       return 0;
     },
     severityChance: { minor: 0.3, moderate: 0.4, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        failChanceMod: randomBetween(0.05, 0.10) * s,
-        growthMod: -randomBetween(0.05, 0.10) * s,
+        failChanceMod: randomBetween(0.05, 0.1) * s,
+        growthMod: -randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Regulatory Scrutiny Increases',
-      'Compliance Issue Surfaces',
-      'New Regulation Threatens Model',
+      "Regulatory Scrutiny Increases",
+      "Compliance Issue Surfaces",
+      "New Regulation Threatens Model",
     ],
     descriptionTemplates: (c) => [
       `New proposed regulations in ${c.sector} could require ${c.name} to fundamentally restructure their data handling. Compliance costs estimated at $500K-1M.`,
@@ -250,8 +267,8 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'cash_crunch',
-    sentiment: 'negative',
+    type: "cash_crunch",
+    sentiment: "negative",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
       if (c.metrics.runway < 6) return 0.03;
@@ -259,16 +276,17 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.4, severe: 0.4 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        failChanceMod: randomBetween(0.10, 0.20) * s,
+        failChanceMod: randomBetween(0.1, 0.2) * s,
         relationshipMod: -randomInt(3, 8) * s,
       };
     },
     titleTemplates: [
-      'Cash Runway Running Low',
-      'Emergency Budget Cuts Needed',
-      'Fundraising Falls Short',
+      "Cash Runway Running Low",
+      "Emergency Budget Cuts Needed",
+      "Fundraising Falls Short",
     ],
     descriptionTemplates: (c) => [
       `${c.name} burned through cash faster than projected. With ${c.metrics.runway} months of runway left, ${c.founderName} is exploring bridge financing options and cutting non-essential spend.`,
@@ -278,25 +296,26 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
   },
   // ============ LEGAL / REGULATORY EVENTS (Feature 6) ============
   {
-    type: 'sec_investigation',
-    sentiment: 'negative',
+    type: "sec_investigation",
+    sentiment: "negative",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
-      if (c.sector === 'Fintech') return 0;
+      if (c.sector === "Fintech") return 0;
       return -Infinity; // Only Fintech
     },
     severityChance: { minor: 0.2, moderate: 0.4, severe: 0.4 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        mrrMod: -0.20 * s,
+        mrrMod: -0.2 * s,
         failChanceMod: 0.15 * s,
       };
     },
     titleTemplates: [
-      'SEC Investigation Opened',
-      'Regulatory Inquiry from SEC',
-      'Securities Compliance Under Review',
+      "SEC Investigation Opened",
+      "Regulatory Inquiry from SEC",
+      "Securities Compliance Under Review",
     ],
     descriptionTemplates: (c) => [
       `The SEC has opened a formal inquiry into ${c.name}'s financial disclosures. Management is working with outside counsel, but the process is consuming significant bandwidth and signaling concern to customers.`,
@@ -305,25 +324,26 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'gdpr_violation',
-    sentiment: 'negative',
+    type: "gdpr_violation",
+    sentiment: "negative",
     baseProbability: 0.008,
     probabilityModifiers: (c, _m) => {
-      if (['SaaS', 'Fintech', 'Consumer'].includes(c.sector)) return 0;
+      if (["SaaS", "Fintech", "Consumer"].includes(c.sector)) return 0;
       return -Infinity;
     },
     severityChance: { minor: 0.4, moderate: 0.4, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         mrrMod: -0.08 * s,
         failChanceMod: 0.05 * s,
       };
     },
     titleTemplates: [
-      'GDPR Compliance Violation Alleged',
-      'Data Protection Fine Issued',
-      'Privacy Regulator Investigates',
+      "GDPR Compliance Violation Alleged",
+      "Data Protection Fine Issued",
+      "Privacy Regulator Investigates",
     ],
     descriptionTemplates: (c) => [
       `A European data protection authority has alleged ${c.name} violated GDPR by improperly processing user data. The potential fine could reach 4% of annual revenue, and the EU market expansion is now on hold.`,
@@ -332,25 +352,27 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'antitrust_scrutiny',
-    sentiment: 'negative',
-    baseProbability: 0.010,
+    type: "antitrust_scrutiny",
+    sentiment: "negative",
+    baseProbability: 0.01,
     probabilityModifiers: (c, _m) => {
-      if (['Marketplace', 'SaaS'].includes(c.sector) && c.metrics.mrr > 500000) return 0;
+      if (["Marketplace", "SaaS"].includes(c.sector) && c.metrics.mrr > 500000)
+        return 0;
       return -Infinity;
     },
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: -0.10 * s,
+        growthMod: -0.1 * s,
         exitChanceMod: -0.05 * s,
       };
     },
     titleTemplates: [
-      'Antitrust Scrutiny Increases',
-      'Competition Regulator Reviews Market Position',
-      'DOJ/FTC Inquiry into Market Practices',
+      "Antitrust Scrutiny Increases",
+      "Competition Regulator Reviews Market Position",
+      "DOJ/FTC Inquiry into Market Practices",
     ],
     descriptionTemplates: (c) => [
       `As ${c.name} has grown, it has attracted antitrust scrutiny for alleged exclusionary practices. The investigation is chilling potential acquirers who don't want regulatory headaches.`,
@@ -359,25 +381,26 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'patent_dispute',
-    sentiment: 'negative',
+    type: "patent_dispute",
+    sentiment: "negative",
     baseProbability: 0.012,
     probabilityModifiers: (c, _m) => {
-      if (['DeepTech', 'Biotech'].includes(c.sector)) return 0;
+      if (["DeepTech", "Biotech"].includes(c.sector)) return 0;
       return -Infinity;
     },
     severityChance: { minor: 0.3, moderate: 0.4, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        exitChanceMod: -0.10 * s,
+        exitChanceMod: -0.1 * s,
         failChanceMod: 0.04 * s,
       };
     },
     titleTemplates: [
-      'Patent Infringement Lawsuit Filed',
-      'IP Dispute Threatens Core Product',
-      'Patent Troll Targets Portfolio Company',
+      "Patent Infringement Lawsuit Filed",
+      "IP Dispute Threatens Core Product",
+      "Patent Troll Targets Portfolio Company",
     ],
     descriptionTemplates: (c) => [
       `A large incumbent filed a patent infringement suit against ${c.name}, claiming their core technology violates three patents. Potential acquirers are now demanding IP indemnification, slowing M&A conversations.`,
@@ -391,24 +414,25 @@ const NEGATIVE_EVENTS: EventTemplate[] = [
 
 const POSITIVE_EVENTS: EventTemplate[] = [
   {
-    type: 'market_tailwind',
-    sentiment: 'positive',
+    type: "market_tailwind",
+    sentiment: "positive",
     baseProbability: 0.04,
     probabilityModifiers: (_c, m) => {
-      if (m === 'bull') return 0.03;
+      if (m === "bull") return 0.03;
       return 0;
     },
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         growthMod: randomBetween(0.05, 0.15) * s,
       };
     },
     titleTemplates: [
-      'Favorable Market Tailwinds',
-      'Sector Momentum Accelerates',
-      'Industry Boom Benefits Portfolio',
+      "Favorable Market Tailwinds",
+      "Sector Momentum Accelerates",
+      "Industry Boom Benefits Portfolio",
     ],
     descriptionTemplates: (c) => [
       `The ${c.sector} sector is experiencing a surge of interest from enterprise buyers. ${c.name}'s inbound pipeline has doubled in the last month.`,
@@ -417,8 +441,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'viral_moment',
-    sentiment: 'positive',
+    type: "viral_moment",
+    sentiment: "positive",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
       if (c.pmfScore > 70) return 0.01;
@@ -426,16 +450,17 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        mrrMod: randomBetween(0.10, 0.25) * s,
-        growthMod: randomBetween(0.05, 0.10) * s,
+        mrrMod: randomBetween(0.1, 0.25) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Product Goes Viral',
-      'Organic Growth Spikes',
-      'Social Media Breakout',
+      "Product Goes Viral",
+      "Organic Growth Spikes",
+      "Social Media Breakout",
     ],
     descriptionTemplates: (c) => [
       `A prominent tech influencer featured ${c.name} in a viral video. Sign-ups jumped 400% overnight, and the team is scrambling to handle onboarding at scale.`,
@@ -444,26 +469,27 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'strategic_partnership',
-    sentiment: 'positive',
+    type: "strategic_partnership",
+    sentiment: "positive",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
-      if (c.coInvestors.some(ci => ci.tier === 'strategic')) return 0.02;
+      if (c.coInvestors.some((ci) => ci.tier === "strategic")) return 0.02;
       return 0;
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: randomBetween(0.05, 0.10) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
         exitChanceMod: 0.05 * s,
-        mrrMod: randomBetween(0.05, 0.10) * s,
+        mrrMod: randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Strategic Partnership Signed',
-      'Major Distribution Deal Closed',
-      'Channel Partnership Expands Reach',
+      "Strategic Partnership Signed",
+      "Major Distribution Deal Closed",
+      "Channel Partnership Expands Reach",
     ],
     descriptionTemplates: (c) => [
       `${c.name} just signed a strategic partnership with a Fortune 500 company. The deal includes co-marketing, API integration, and a guaranteed minimum revenue commitment.`,
@@ -472,8 +498,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'key_hire',
-    sentiment: 'positive',
+    type: "key_hire",
+    sentiment: "positive",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
       if (c.supportScore > 50) return 0.02;
@@ -481,16 +507,17 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: randomBetween(0.05, 0.10) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
         pmfMod: randomInt(3, 5) * s,
       };
     },
     titleTemplates: [
-      'Key Hire Lands',
-      'Star Executive Joins Team',
-      'Industry Veteran Comes Aboard',
+      "Key Hire Lands",
+      "Star Executive Joins Team",
+      "Industry Veteran Comes Aboard",
     ],
     descriptionTemplates: (c) => [
       `${c.name} just hired a former VP from a successful competitor. She brings deep domain expertise, a strong network, and credibility with enterprise buyers.`,
@@ -499,8 +526,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'surprise_acquisition_interest',
-    sentiment: 'positive',
+    type: "surprise_acquisition_interest",
+    sentiment: "positive",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
       if (c.metrics.mrr > 100000 && c.pmfScore > 50) return 0.01;
@@ -508,15 +535,16 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.0, moderate: 0.5, severe: 0.5 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.7;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.7;
       return {
         exitChanceMod: randomBetween(0.15, 0.25) * s,
       };
     },
     titleTemplates: [
-      'Surprise M&A Interest',
-      'Acquisition Inquiry Received',
-      'Strategic Buyer Approaches',
+      "Surprise M&A Interest",
+      "Acquisition Inquiry Received",
+      "Strategic Buyer Approaches",
     ],
     descriptionTemplates: (c) => [
       `${c.name} received an unsolicited acquisition inquiry from a major tech company. ${c.founderName} isn't sure they want to sell, but the interest validates the business.`,
@@ -526,25 +554,26 @@ const POSITIVE_EVENTS: EventTemplate[] = [
   },
   // ============ LEGAL / REGULATORY POSITIVE EVENTS (Feature 6) ============
   {
-    type: 'fda_approval',
-    sentiment: 'positive',
+    type: "fda_approval",
+    sentiment: "positive",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
-      if (['HealthTech', 'Biotech'].includes(c.sector)) return 0;
+      if (["HealthTech", "Biotech"].includes(c.sector)) return 0;
       return -Infinity;
     },
     severityChance: { minor: 0.0, moderate: 0.4, severe: 0.6 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         mrrMod: 0.35 * s,
-        exitChanceMod: 0.20 * s,
+        exitChanceMod: 0.2 * s,
       };
     },
     titleTemplates: [
-      'FDA Approval Granted',
-      'Regulatory Clearance Received',
-      'FDA 510(k) Cleared',
+      "FDA Approval Granted",
+      "Regulatory Clearance Received",
+      "FDA 510(k) Cleared",
     ],
     descriptionTemplates: (c) => [
       `${c.name} has received FDA clearance for their flagship product. This milestone opens up hospital procurement channels and dramatically de-risks the business. Strategic acquirers are already reaching out.`,
@@ -553,25 +582,26 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'regulatory_approval',
-    sentiment: 'positive',
-    baseProbability: 0.010,
+    type: "regulatory_approval",
+    sentiment: "positive",
+    baseProbability: 0.01,
     probabilityModifiers: (c, _m) => {
-      if (['Fintech', 'HealthTech', 'Biotech'].includes(c.sector)) return 0;
+      if (["Fintech", "HealthTech", "Biotech"].includes(c.sector)) return 0;
       return -Infinity;
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         growthMod: 0.12 * s,
-        exitChanceMod: 0.10 * s,
+        exitChanceMod: 0.1 * s,
       };
     },
     titleTemplates: [
-      'Key Regulatory License Granted',
-      'Banking License Obtained',
-      'Regulatory Approval Unlocks Market',
+      "Key Regulatory License Granted",
+      "Banking License Obtained",
+      "Regulatory Approval Unlocks Market",
     ],
     descriptionTemplates: (c) => [
       `${c.name} received a critical regulatory license that allows them to operate in 12 new markets. The compliance moat this creates significantly raises the barrier for competitors.`,
@@ -580,13 +610,14 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'major_customer_win',
-    sentiment: 'positive',
+    type: "major_customer_win",
+    sentiment: "positive",
     baseProbability: 0.03,
     probabilityModifiers: (_c, _m) => 0,
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         mrrMod: randomBetween(0.05, 0.15) * s,
         growthMod: randomBetween(0.03, 0.05) * s,
@@ -594,9 +625,9 @@ const POSITIVE_EVENTS: EventTemplate[] = [
       };
     },
     titleTemplates: [
-      'Major Customer Win',
-      'Enterprise Logo Landed',
-      'Breakthrough Deal Closed',
+      "Major Customer Win",
+      "Enterprise Logo Landed",
+      "Breakthrough Deal Closed",
     ],
     descriptionTemplates: (c) => [
       `${c.name} just closed their largest deal ever — a 3-year enterprise contract worth $${randomInt(200, 800)}K annually. The customer is a recognizable brand that will open doors.`,
@@ -606,8 +637,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
   },
   // ============ GROWTH MILESTONE EVENTS ============
   {
-    type: 'product_market_fit_achieved',
-    sentiment: 'positive',
+    type: "product_market_fit_achieved",
+    sentiment: "positive",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
       if (c.pmfScore > 75 && c.metrics.growthRate > 0.08) return 0.02;
@@ -615,17 +646,18 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.0, moderate: 0.4, severe: 0.6 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: randomBetween(0.10, 0.20) * s,
+        growthMod: randomBetween(0.1, 0.2) * s,
         pmfMod: randomInt(5, 10) * s,
         exitChanceMod: 0.05 * s,
       };
     },
     titleTemplates: [
-      'Product-Market Fit Confirmed',
-      'PMF Breakthrough Moment',
-      'Organic Demand Surges',
+      "Product-Market Fit Confirmed",
+      "PMF Breakthrough Moment",
+      "Organic Demand Surges",
     ],
     descriptionTemplates: (c) => [
       `${c.name} has hit a clear product-market fit inflection point in ${c.sector}. Customers are converting faster than the sales team can handle, and NPS scores have hit 70+. ${c.founderName} is fielding inbound interest from strategic partners.`,
@@ -634,8 +666,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'revenue_acceleration',
-    sentiment: 'positive',
+    type: "revenue_acceleration",
+    sentiment: "positive",
     baseProbability: 0.025,
     probabilityModifiers: (c, _m) => {
       if (c.metrics.mrr > 50000 && c.metrics.growthRate > 0.05) return 0.01;
@@ -643,16 +675,17 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        mrrMod: randomBetween(0.15, 0.30) * s,
-        growthMod: randomBetween(0.05, 0.10) * s,
+        mrrMod: randomBetween(0.15, 0.3) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
       };
     },
     titleTemplates: [
-      'Revenue Growth Accelerates',
-      'ARR Growth Hits Inflection',
-      'Revenue Engine Firing on All Cylinders',
+      "Revenue Growth Accelerates",
+      "ARR Growth Hits Inflection",
+      "Revenue Engine Firing on All Cylinders",
     ],
     descriptionTemplates: (c) => [
       `${c.name}'s revenue engine is firing. MRR grew ${randomInt(20, 40)}% this month alone, driven by a combination of new logos and expansion within existing accounts in ${c.sector}. The team is projecting $${randomInt(5, 20)}M ARR by year-end.`,
@@ -661,8 +694,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'team_scaling_success',
-    sentiment: 'positive',
+    type: "team_scaling_success",
+    sentiment: "positive",
     baseProbability: 0.02,
     probabilityModifiers: (c, _m) => {
       if (c.teamSize > 30 && c.pmfScore > 50) return 0.01;
@@ -670,16 +703,17 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.3, moderate: 0.5, severe: 0.2 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: randomBetween(0.05, 0.10) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
         pmfMod: randomInt(2, 4) * s,
       };
     },
     titleTemplates: [
-      'Team Scaling Milestone Reached',
-      'Engineering Team Doubles Output',
-      'Organizational Maturity Leap',
+      "Team Scaling Milestone Reached",
+      "Engineering Team Doubles Output",
+      "Organizational Maturity Leap",
     ],
     descriptionTemplates: (c) => [
       `${c.name} has successfully scaled from ${Math.max(5, c.teamSize - randomInt(10, 20))} to ${c.teamSize} employees without losing velocity. ${c.founderName} credits strong hiring processes and a culture-first approach to onboarding.`,
@@ -688,8 +722,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'international_market_entry',
-    sentiment: 'positive',
+    type: "international_market_entry",
+    sentiment: "positive",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
       if (c.metrics.mrr > 100000 && c.pmfScore > 55) return 0.01;
@@ -697,7 +731,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
         mrrMod: randomBetween(0.08, 0.15) * s,
         growthMod: randomBetween(0.05, 0.08) * s,
@@ -705,9 +740,9 @@ const POSITIVE_EVENTS: EventTemplate[] = [
       };
     },
     titleTemplates: [
-      'International Expansion Succeeds',
-      'New Market Entry Gains Traction',
-      'Global Footprint Expands',
+      "International Expansion Succeeds",
+      "New Market Entry Gains Traction",
+      "Global Footprint Expands",
     ],
     descriptionTemplates: (c) => [
       `${c.name}'s international expansion into Europe is off to a strong start. The first quarter in-market exceeded targets by 40%, and the local team has already closed three enterprise accounts in ${c.sector}.`,
@@ -716,8 +751,8 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     ],
   },
   {
-    type: 'category_leader_recognition',
-    sentiment: 'positive',
+    type: "category_leader_recognition",
+    sentiment: "positive",
     baseProbability: 0.015,
     probabilityModifiers: (c, _m) => {
       if (c.metrics.customers > 200 && c.pmfScore > 60) return 0.01;
@@ -725,17 +760,18 @@ const POSITIVE_EVENTS: EventTemplate[] = [
     },
     severityChance: { minor: 0.2, moderate: 0.5, severe: 0.3 },
     generateEffects: (severity) => {
-      const s = severity === 'severe' ? 1.5 : severity === 'moderate' ? 1.0 : 0.6;
+      const s =
+        severity === "severe" ? 1.5 : severity === "moderate" ? 1.0 : 0.6;
       return {
-        growthMod: randomBetween(0.05, 0.10) * s,
-        mrrMod: randomBetween(0.05, 0.10) * s,
+        growthMod: randomBetween(0.05, 0.1) * s,
+        mrrMod: randomBetween(0.05, 0.1) * s,
         exitChanceMod: 0.05 * s,
       };
     },
     titleTemplates: [
-      'Named Category Leader by Analysts',
-      'Industry Award Win',
-      'Top-Ranked in Analyst Report',
+      "Named Category Leader by Analysts",
+      "Industry Award Win",
+      "Top-Ranked in Analyst Report",
     ],
     descriptionTemplates: (c) => [
       `${c.name} was named a Leader in the latest Gartner Magic Quadrant for ${c.sector}. The recognition is driving significant inbound interest from enterprise buyers who rely on analyst reports for purchasing decisions.`,
@@ -749,20 +785,24 @@ const POSITIVE_EVENTS: EventTemplate[] = [
 // CORE FUNCTIONS
 // ============================================================
 
-function rollSeverity(chances: { minor: number; moderate: number; severe: number }): 'minor' | 'moderate' | 'severe' {
+function rollSeverity(chances: {
+  minor: number;
+  moderate: number;
+  severe: number;
+}): "minor" | "moderate" | "severe" {
   const roll = Math.random();
-  if (roll < chances.minor) return 'minor';
-  if (roll < chances.minor + chances.moderate) return 'moderate';
-  return 'severe';
+  if (roll < chances.minor) return "minor";
+  if (roll < chances.minor + chances.moderate) return "moderate";
+  return "severe";
 }
 
 // High-regulatory-risk regions (Feature 5)
-const HIGH_REG_REGIONS: StartupRegion[] = ['london', 'berlin', 'singapore'];
+const HIGH_REG_REGIONS: StartupRegion[] = ["london", "berlin", "singapore"];
 
 export function generateMonthlyEvents(
   company: PortfolioCompany,
   market: MarketCycle,
-  region?: StartupRegion
+  region?: StartupRegion,
 ): DynamicEvent[] {
   const events: DynamicEvent[] = [];
   const allTemplates = [...NEGATIVE_EVENTS, ...POSITIVE_EVENTS];
@@ -774,9 +814,10 @@ export function generateMonthlyEvents(
     // Cap at 2 events per company per month
     if (events.length >= 2) break;
 
-    let adjustedProbability = template.baseProbability + template.probabilityModifiers(company, market);
+    let adjustedProbability =
+      template.baseProbability + template.probabilityModifiers(company, market);
     // Boost regulatory_issue for high-risk regions
-    if (template.type === 'regulatory_issue') {
+    if (template.type === "regulatory_issue") {
       adjustedProbability += regBoost;
     }
 
@@ -812,35 +853,35 @@ export function generateMonthlyEvents(
 
 export function applyEventModifiers(
   event: DynamicEvent,
-  company: PortfolioCompany
+  company: PortfolioCompany,
 ): DynamicEvent {
   // Only reduce negative effects
-  if (event.sentiment !== 'negative') return event;
+  if (event.sentiment !== "negative") return event;
 
   let reductionMultiplier = 1.0;
 
   // Lab companies: negative effects reduced by 40-60%
-  if (company.origin === 'lab') {
-    reductionMultiplier *= randomBetween(0.40, 0.60);
+  if (company.origin === "lab") {
+    reductionMultiplier *= randomBetween(0.4, 0.6);
   }
   // Incubator companies: negative effects reduced by 20-30%
-  else if (company.origin === 'incubator') {
-    reductionMultiplier *= randomBetween(0.70, 0.80);
+  else if (company.origin === "incubator") {
+    reductionMultiplier *= randomBetween(0.7, 0.8);
   }
 
   // High support score (>50): negative effects reduced by 20%
   if (company.supportScore > 50) {
-    reductionMultiplier *= 0.80;
+    reductionMultiplier *= 0.8;
   }
 
   // Board seat: negative effects reduced by 15%
-  if (company.influence === 'board_seat' || company.influence === 'majority') {
+  if (company.influence === "board_seat" || company.influence === "majority") {
     reductionMultiplier *= 0.85;
   }
 
   // High relationship (>70): negative effects reduced by 10%
   if (company.relationship > 70) {
-    reductionMultiplier *= 0.90;
+    reductionMultiplier *= 0.9;
   }
 
   // Apply reduction to all numeric effects
@@ -849,16 +890,28 @@ export function applyEventModifiers(
   if (modifiedEffects.mrrMod !== undefined && modifiedEffects.mrrMod < 0) {
     modifiedEffects.mrrMod *= reductionMultiplier;
   }
-  if (modifiedEffects.relationshipMod !== undefined && modifiedEffects.relationshipMod < 0) {
+  if (
+    modifiedEffects.relationshipMod !== undefined &&
+    modifiedEffects.relationshipMod < 0
+  ) {
     modifiedEffects.relationshipMod *= reductionMultiplier;
   }
-  if (modifiedEffects.failChanceMod !== undefined && modifiedEffects.failChanceMod > 0) {
+  if (
+    modifiedEffects.failChanceMod !== undefined &&
+    modifiedEffects.failChanceMod > 0
+  ) {
     modifiedEffects.failChanceMod *= reductionMultiplier;
   }
-  if (modifiedEffects.exitChanceMod !== undefined && modifiedEffects.exitChanceMod < 0) {
+  if (
+    modifiedEffects.exitChanceMod !== undefined &&
+    modifiedEffects.exitChanceMod < 0
+  ) {
     modifiedEffects.exitChanceMod *= reductionMultiplier;
   }
-  if (modifiedEffects.growthMod !== undefined && modifiedEffects.growthMod < 0) {
+  if (
+    modifiedEffects.growthMod !== undefined &&
+    modifiedEffects.growthMod < 0
+  ) {
     modifiedEffects.growthMod *= reductionMultiplier;
   }
   if (modifiedEffects.pmfMod !== undefined && modifiedEffects.pmfMod < 0) {

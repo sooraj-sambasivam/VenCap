@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo } from "react";
 import {
   LineChart,
   Line,
@@ -88,13 +88,18 @@ interface PortfolioValueChartProps {
   }[];
 }
 
-export const PortfolioValueChart = memo(function PortfolioValueChart({ data }: PortfolioValueChartProps) {
+export const PortfolioValueChart = memo(function PortfolioValueChart({
+  data,
+}: PortfolioValueChartProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Portfolio Value</CardTitle>
       </CardHeader>
-      <CardContent role="img" aria-label="Line chart showing portfolio value and cash available over time">
+      <CardContent
+        role="img"
+        aria-label="Line chart showing portfolio value and cash available over time"
+      >
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <XAxis
@@ -148,7 +153,7 @@ export const PortfolioValueChart = memo(function PortfolioValueChart({ data }: P
       </CardContent>
     </Card>
   );
-})
+});
 
 // ---------------------------------------------------------------------------
 // 2. DeploymentPaceChart — area chart with ideal-pace reference line
@@ -177,7 +182,10 @@ export const DeploymentPaceChart = memo(function DeploymentPaceChart({
       <CardHeader>
         <CardTitle>Deployment Pace</CardTitle>
       </CardHeader>
-      <CardContent role="img" aria-label="Area chart showing capital deployment pace versus ideal deployment rate">
+      <CardContent
+        role="img"
+        aria-label="Area chart showing capital deployment pace versus ideal deployment rate"
+      >
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={merged}>
             <XAxis
@@ -238,7 +246,7 @@ export const DeploymentPaceChart = memo(function DeploymentPaceChart({
       </CardContent>
     </Card>
   );
-})
+});
 
 // ---------------------------------------------------------------------------
 // 3. LPSentimentChart — line chart with colored reference zones
@@ -248,13 +256,18 @@ interface LPSentimentChartProps {
   data: { month: number; lpScore: number }[];
 }
 
-export const LPSentimentChart = memo(function LPSentimentChart({ data }: LPSentimentChartProps) {
+export const LPSentimentChart = memo(function LPSentimentChart({
+  data,
+}: LPSentimentChartProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>LP Sentiment</CardTitle>
       </CardHeader>
-      <CardContent role="img" aria-label="Line chart showing LP sentiment score over time, with green zone above 60 and red zone below 40">
+      <CardContent
+        role="img"
+        aria-label="Line chart showing LP sentiment score over time, with green zone above 60 and red zone below 40"
+      >
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={data}>
             <XAxis
@@ -275,10 +288,7 @@ export const LPSentimentChart = memo(function LPSentimentChart({ data }: LPSenti
             />
             <Tooltip
               {...TOOLTIP_STYLE}
-              formatter={(value) => [
-                Number(value ?? 0).toFixed(1),
-                "LP Score",
-              ]}
+              formatter={(value) => [Number(value ?? 0).toFixed(1), "LP Score"]}
               labelFormatter={(label) => `Month ${label}`}
             />
 
@@ -311,7 +321,7 @@ export const LPSentimentChart = memo(function LPSentimentChart({ data }: LPSenti
       </CardContent>
     </Card>
   );
-})
+});
 
 // ---------------------------------------------------------------------------
 // 4. SectorAllocationChart — pie chart
@@ -327,13 +337,18 @@ function renderPieLabel(props: PieLabelRenderProps): string {
   return `${name} ${formatDollarShort(value)}`;
 }
 
-export const SectorAllocationChart = memo(function SectorAllocationChart({ data }: SectorAllocationChartProps) {
+export const SectorAllocationChart = memo(function SectorAllocationChart({
+  data,
+}: SectorAllocationChartProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sector Allocation</CardTitle>
       </CardHeader>
-      <CardContent role="img" aria-label="Pie chart showing investment allocation across sectors">
+      <CardContent
+        role="img"
+        aria-label="Pie chart showing investment allocation across sectors"
+      >
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -367,7 +382,7 @@ export const SectorAllocationChart = memo(function SectorAllocationChart({ data 
       </CardContent>
     </Card>
   );
-})
+});
 
 // ---------------------------------------------------------------------------
 // 5. WaterfallChart — fund performance waterfall
@@ -383,16 +398,54 @@ interface WaterfallChartProps {
   };
 }
 
-export const WaterfallChart = memo(function WaterfallChart({ data }: WaterfallChartProps) {
-  const netValue = data.invested + data.cashReturned + data.unrealizedValue - data.fees - data.carry;
+export const WaterfallChart = memo(function WaterfallChart({
+  data,
+}: WaterfallChartProps) {
+  const netValue =
+    data.invested +
+    data.cashReturned +
+    data.unrealizedValue -
+    data.fees -
+    data.carry;
 
   const chartData = [
-    { name: 'Invested', value: data.invested, base: 0, fill: COLORS.indigo },
-    { name: 'Returned', value: data.cashReturned, base: data.invested, fill: COLORS.emerald },
-    { name: 'Unrealized', value: data.unrealizedValue, base: data.invested + data.cashReturned, fill: '#8b5cf6' },
-    { name: 'Fees', value: data.fees, base: data.invested + data.cashReturned + data.unrealizedValue - data.fees, fill: COLORS.amber },
-    { name: 'Carry', value: data.carry, base: data.invested + data.cashReturned + data.unrealizedValue - data.fees - data.carry, fill: COLORS.rose },
-    { name: 'Net to LP', value: Math.max(0, netValue), base: 0, fill: '#06b6d4' },
+    { name: "Invested", value: data.invested, base: 0, fill: COLORS.indigo },
+    {
+      name: "Returned",
+      value: data.cashReturned,
+      base: data.invested,
+      fill: COLORS.emerald,
+    },
+    {
+      name: "Unrealized",
+      value: data.unrealizedValue,
+      base: data.invested + data.cashReturned,
+      fill: "#8b5cf6",
+    },
+    {
+      name: "Fees",
+      value: data.fees,
+      base:
+        data.invested + data.cashReturned + data.unrealizedValue - data.fees,
+      fill: COLORS.amber,
+    },
+    {
+      name: "Carry",
+      value: data.carry,
+      base:
+        data.invested +
+        data.cashReturned +
+        data.unrealizedValue -
+        data.fees -
+        data.carry,
+      fill: COLORS.rose,
+    },
+    {
+      name: "Net to LP",
+      value: Math.max(0, netValue),
+      base: 0,
+      fill: "#06b6d4",
+    },
   ];
 
   return (
@@ -400,21 +453,23 @@ export const WaterfallChart = memo(function WaterfallChart({ data }: WaterfallCh
       <CardHeader>
         <CardTitle>Fund Performance Waterfall</CardTitle>
       </CardHeader>
-      <CardContent role="img" aria-label="Bar chart showing fund performance waterfall from invested capital to net LP returns">
+      <CardContent
+        role="img"
+        aria-label="Bar chart showing fund performance waterfall from invested capital to net LP returns"
+      >
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData} barCategoryGap="20%">
             <XAxis dataKey="name" {...AXIS_STYLE} />
             <YAxis {...AXIS_STYLE} tickFormatter={formatDollarShort} />
             <Tooltip
               {...TOOLTIP_STYLE}
-              formatter={(value) => [formatDollarFull(Number(value ?? 0)), 'Amount']}
+              formatter={(value) => [
+                formatDollarFull(Number(value ?? 0)),
+                "Amount",
+              ]}
             />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" />
-            <Bar
-              dataKey="value"
-              stackId="waterfall"
-              radius={[4, 4, 0, 0]}
-            >
+            <Bar dataKey="value" stackId="waterfall" radius={[4, 4, 0, 0]}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}
@@ -424,4 +479,4 @@ export const WaterfallChart = memo(function WaterfallChart({ data }: WaterfallCh
       </CardContent>
     </Card>
   );
-})
+});

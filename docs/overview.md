@@ -44,18 +44,18 @@ src/
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Framework | React | 19.x |
-| Language | TypeScript | 5.9 (strict mode) |
-| Build | Vite | 7.x |
-| Styling | Tailwind CSS v4 | 4.2 |
-| Components | shadcn/ui (Radix primitives) | Latest |
-| State | Zustand (persist → localStorage) | 5.x |
-| Routing | React Router | 7.x |
-| Charts | Recharts | 3.x |
-| Icons | Lucide React | 0.575 |
-| Toasts | Sonner | 2.x |
+| Layer      | Technology                       | Version           |
+| ---------- | -------------------------------- | ----------------- |
+| Framework  | React                            | 19.x              |
+| Language   | TypeScript                       | 5.9 (strict mode) |
+| Build      | Vite                             | 7.x               |
+| Styling    | Tailwind CSS v4                  | 4.2               |
+| Components | shadcn/ui (Radix primitives)     | Latest            |
+| State      | Zustand (persist → localStorage) | 5.x               |
+| Routing    | React Router                     | 7.x               |
+| Charts     | Recharts                         | 3.x               |
+| Icons      | Lucide React                     | 0.575             |
+| Toasts     | Sonner                           | 2.x               |
 
 ---
 
@@ -75,12 +75,12 @@ src/
 
 ## Documentation Index
 
-| Document | Description |
-|----------|-------------|
-| [Frontend](./frontend.md) | Pages, components, routing, UI patterns, state flow |
-| [Engine](./engine.md) | Game state, simulation core, data generation |
-| [Game Logic](./game-logic.md) | Algorithms, formulas, modifier system, scoring |
-| [Next Steps](./next-steps.md) | Post-MVP roadmap, improvements, known gaps |
+| Document                      | Description                                         |
+| ----------------------------- | --------------------------------------------------- |
+| [Frontend](./frontend.md)     | Pages, components, routing, UI patterns, state flow |
+| [Engine](./engine.md)         | Game state, simulation core, data generation        |
+| [Game Logic](./game-logic.md) | Algorithms, formulas, modifier system, scoring      |
+| [Next Steps](./next-steps.md) | Post-MVP roadmap, improvements, known gaps          |
 
 ---
 
@@ -96,6 +96,7 @@ npm run preview    # preview production build
 ## TypeScript Strictness
 
 The project enforces aggressive TS rules:
+
 - `noUnusedLocals` / `noUnusedParameters`
 - `verbatimModuleSyntax` — requires `import type` for type-only imports
 - `noFallthroughCasesInSwitch`

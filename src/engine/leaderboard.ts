@@ -3,9 +3,9 @@
 // Persists top 20 scores in localStorage.
 // ============================================================
 
-import type { LeaderboardEntry } from './types';
+import type { LeaderboardEntry } from "./types";
 
-const STORAGE_KEY = 'vencap-leaderboard';
+const STORAGE_KEY = "vencap-leaderboard";
 const MAX_ENTRIES = 20;
 
 /** Read the full leaderboard, sorted by finalScore desc. */
@@ -23,7 +23,7 @@ export function getLeaderboard(): LeaderboardEntry[] {
 export function addToLeaderboard(entry: LeaderboardEntry): void {
   const entries = getLeaderboard();
   // Prevent duplicates by checking id
-  if (entries.some(e => e.id === entry.id)) return;
+  if (entries.some((e) => e.id === entry.id)) return;
   entries.push(entry);
   entries.sort((a, b) => b.finalScore - a.finalScore);
   const trimmed = entries.slice(0, MAX_ENTRIES);

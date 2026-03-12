@@ -35,39 +35,41 @@ Tech stack:
 
 Project structure:
 ```
+
 src/
-├── components/          # Reusable UI components
-│   ├── ui/             # shadcn/ui primitives
-│   ├── DealCard.tsx
-│   ├── InvestModal.tsx
-│   ├── PortfolioTable.tsx
-│   ├── LPSentimentPill.tsx
-│   ├── MarketCycleBadge.tsx
-│   ├── FounderStateBadge.tsx
-│   ├── PMFBadge.tsx
-│   └── AlertsPanel.tsx
+├── components/ # Reusable UI components
+│ ├── ui/ # shadcn/ui primitives
+│ ├── DealCard.tsx
+│ ├── InvestModal.tsx
+│ ├── PortfolioTable.tsx
+│ ├── LPSentimentPill.tsx
+│ ├── MarketCycleBadge.tsx
+│ ├── FounderStateBadge.tsx
+│ ├── PMFBadge.tsx
+│ └── AlertsPanel.tsx
 ├── pages/
-│   ├── Index.tsx        # Fund setup wizard
-│   ├── Dashboard.tsx
-│   ├── Deals.tsx
-│   ├── Portfolio.tsx
-│   ├── Incubator.tsx
-│   ├── Lab.tsx
-│   ├── News.tsx
-│   ├── Reports.tsx
-│   └── Results.tsx
-├── engine/              # Pure TypeScript simulation logic (NO React imports)
-│   ├── gameState.ts     # Zustand store + advanceTime() core loop
-│   ├── mockData.ts      # Startup generation, co-investors, founder states, acquirers
-│   ├── dynamicEvents.ts # Monthly random event system
-│   ├── lpSentiment.ts   # LP trust score engine (8 factors)
-│   ├── talentMarket.ts  # Talent pool + hiring mechanics
-│   ├── vcRealism.ts     # Ownership caps, check sizes, buyout rules
-│   └── types.ts         # All TypeScript interfaces/types
+│ ├── Index.tsx # Fund setup wizard
+│ ├── Dashboard.tsx
+│ ├── Deals.tsx
+│ ├── Portfolio.tsx
+│ ├── Incubator.tsx
+│ ├── Lab.tsx
+│ ├── News.tsx
+│ ├── Reports.tsx
+│ └── Results.tsx
+├── engine/ # Pure TypeScript simulation logic (NO React imports)
+│ ├── gameState.ts # Zustand store + advanceTime() core loop
+│ ├── mockData.ts # Startup generation, co-investors, founder states, acquirers
+│ ├── dynamicEvents.ts # Monthly random event system
+│ ├── lpSentiment.ts # LP trust score engine (8 factors)
+│ ├── talentMarket.ts # Talent pool + hiring mechanics
+│ ├── vcRealism.ts # Ownership caps, check sizes, buyout rules
+│ └── types.ts # All TypeScript interfaces/types
 ├── lib/
-│   └── utils.ts         # Utility functions
+│ └── utils.ts # Utility functions
 ├── App.tsx
 └── main.tsx
+
 ```
 
 Routes:
@@ -1533,30 +1535,30 @@ EMPTY STATES:
 
 Feed the prompts to Claude Code in this exact order:
 
-| Step | Prompt | What It Does | Est. Complexity |
-|------|--------|-------------|-----------------|
-| 1 | ✅ Project Init (#1) | Scaffold project, install deps, routing | Low |
-| 2 | ✅ Types (#2) | Define all data models | Low |
-| 3 | ✅ VC Realism (#3A) | Ownership caps, check sizes, buyout rules | Medium |
-| 4 | ✅ Startup Gen (#3B) | Procedural company generation | High |
-| 5 | ✅ Dynamic Events (#3C) | Monthly event system | High |
-| 6 | ✅ LP Sentiment (#3D) | LP trust engine | Medium |
-| 7 | ✅ Talent Market (#3E) | Hiring mechanics | Medium |
-| 8 | ✅ Core Game Loop (#3F) | advanceTime() + all actions | **Very High** |
-| 9 | ✅ Fund Setup (#4A) | Onboarding wizard UI | Medium |
-| 10 | ✅ Dashboard (#4B) | Command center UI | Medium |
-| 11 | ✅ Deal Flow (#4C) | Deal cards + invest modal | High |
-| 12 | ✅ Portfolio (#4D) | Investment management UI | **Very High** |
-| 13 | ✅ Incubator (#4E) | Incubator program UI | Medium |
-| 14 | ✅ Venture Lab (#4F) | Lab creation flow UI | Medium |
-| 15 | ✅ News (#4G) | News feed UI | Low |
-| 16 | ✅ LP Reports (#4H) | Report document UI | Medium |
-| 17 | ✅ Results (#4I) | End-of-fund scorecard | Medium |
-| 18 | ✅ News Gen (#5A) | Wire news into game loop | Low |
-| 19 | ✅ Charts (#5B) | Recharts visualizations | Medium |
-| 20 | ✅ Onboarding (#6A) | Tutorial + tooltips | Low |
-| 21 | ✅ Theme + Responsive (#6B) | Dark/light + mobile | Medium |
-| 22 | ✅ Polish (#6C) | Loading, toasts, animations | Low |
+| Step | Prompt                      | What It Does                              | Est. Complexity |
+| ---- | --------------------------- | ----------------------------------------- | --------------- |
+| 1    | ✅ Project Init (#1)        | Scaffold project, install deps, routing   | Low             |
+| 2    | ✅ Types (#2)               | Define all data models                    | Low             |
+| 3    | ✅ VC Realism (#3A)         | Ownership caps, check sizes, buyout rules | Medium          |
+| 4    | ✅ Startup Gen (#3B)        | Procedural company generation             | High            |
+| 5    | ✅ Dynamic Events (#3C)     | Monthly event system                      | High            |
+| 6    | ✅ LP Sentiment (#3D)       | LP trust engine                           | Medium          |
+| 7    | ✅ Talent Market (#3E)      | Hiring mechanics                          | Medium          |
+| 8    | ✅ Core Game Loop (#3F)     | advanceTime() + all actions               | **Very High**   |
+| 9    | ✅ Fund Setup (#4A)         | Onboarding wizard UI                      | Medium          |
+| 10   | ✅ Dashboard (#4B)          | Command center UI                         | Medium          |
+| 11   | ✅ Deal Flow (#4C)          | Deal cards + invest modal                 | High            |
+| 12   | ✅ Portfolio (#4D)          | Investment management UI                  | **Very High**   |
+| 13   | ✅ Incubator (#4E)          | Incubator program UI                      | Medium          |
+| 14   | ✅ Venture Lab (#4F)        | Lab creation flow UI                      | Medium          |
+| 15   | ✅ News (#4G)               | News feed UI                              | Low             |
+| 16   | ✅ LP Reports (#4H)         | Report document UI                        | Medium          |
+| 17   | ✅ Results (#4I)            | End-of-fund scorecard                     | Medium          |
+| 18   | ✅ News Gen (#5A)           | Wire news into game loop                  | Low             |
+| 19   | ✅ Charts (#5B)             | Recharts visualizations                   | Medium          |
+| 20   | ✅ Onboarding (#6A)         | Tutorial + tooltips                       | Low             |
+| 21   | ✅ Theme + Responsive (#6B) | Dark/light + mobile                       | Medium          |
+| 22   | ✅ Polish (#6C)             | Loading, toasts, animations               | Low             |
 
 **Total: ~22 prompts in sequence. Budget ~2-4 hours for Claude Code to execute all of them with review.**
 

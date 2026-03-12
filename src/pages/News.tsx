@@ -1,91 +1,100 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useGameStore } from '@/engine/gameState'
-import { getMonthName, getGameYear } from '@/lib/utils'
-import type { NewsType, EventSentiment } from '@/engine/types'
-import { ArrowLeft, Newspaper, Briefcase, Filter } from 'lucide-react'
-import { PageShell } from '@/components/PageShell'
+} from "@/components/ui/select";
+import { useGameStore } from "@/engine/gameState";
+import { getMonthName, getGameYear } from "@/lib/utils";
+import type { NewsType, EventSentiment } from "@/engine/types";
+import { ArrowLeft, Newspaper, Briefcase, Filter } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 
 // ============ CONSTANTS ============
 
 const TYPE_CONFIG: Record<NewsType, { label: string; className: string }> = {
-  funding_round: { label: 'Funding Round', className: 'bg-green-600 text-green-100' },
-  exit: { label: 'Exit', className: 'bg-blue-600 text-blue-100' },
-  market_trend: { label: 'Market Trend', className: 'bg-purple-600 text-purple-100' },
-  cycle_change: { label: 'Cycle Change', className: 'bg-orange-600 text-orange-100' },
-  regulation: { label: 'Regulation', className: 'bg-gray-600 text-gray-100' },
-  scandal: { label: 'Scandal', className: 'bg-red-600 text-red-100' },
-}
+  funding_round: {
+    label: "Funding Round",
+    className: "bg-green-600 text-green-100",
+  },
+  exit: { label: "Exit", className: "bg-blue-600 text-blue-100" },
+  market_trend: {
+    label: "Market Trend",
+    className: "bg-purple-600 text-purple-100",
+  },
+  cycle_change: {
+    label: "Cycle Change",
+    className: "bg-orange-600 text-orange-100",
+  },
+  regulation: { label: "Regulation", className: "bg-gray-600 text-gray-100" },
+  scandal: { label: "Scandal", className: "bg-red-600 text-red-100" },
+};
 
 const SENTIMENT_DOT: Record<EventSentiment, string> = {
-  positive: 'bg-green-400',
-  negative: 'bg-red-400',
-  neutral: 'bg-blue-400',
-}
+  positive: "bg-green-400",
+  negative: "bg-red-400",
+  neutral: "bg-blue-400",
+};
 
 const TYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Types' },
-  { value: 'funding_round', label: 'Funding Round' },
-  { value: 'exit', label: 'Exit' },
-  { value: 'market_trend', label: 'Market Trend' },
-  { value: 'cycle_change', label: 'Cycle Change' },
-  { value: 'regulation', label: 'Regulation' },
-  { value: 'scandal', label: 'Scandal' },
-]
+  { value: "all", label: "All Types" },
+  { value: "funding_round", label: "Funding Round" },
+  { value: "exit", label: "Exit" },
+  { value: "market_trend", label: "Market Trend" },
+  { value: "cycle_change", label: "Cycle Change" },
+  { value: "regulation", label: "Regulation" },
+  { value: "scandal", label: "Scandal" },
+];
 
 const SENTIMENT_OPTIONS: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Sentiment' },
-  { value: 'positive', label: 'Positive' },
-  { value: 'negative', label: 'Negative' },
-  { value: 'neutral', label: 'Neutral' },
-]
+  { value: "all", label: "All Sentiment" },
+  { value: "positive", label: "Positive" },
+  { value: "negative", label: "Negative" },
+  { value: "neutral", label: "Neutral" },
+];
 
 // ============ COMPONENT ============
 
 export default function News() {
-  const navigate = useNavigate()
-  const { fund, gamePhase, news } = useGameStore()
+  const navigate = useNavigate();
+  const { fund, gamePhase, news } = useGameStore();
 
   useEffect(() => {
-    if (!fund || gamePhase === 'setup') {
-      navigate('/', { replace: true })
+    if (!fund || gamePhase === "setup") {
+      navigate("/", { replace: true });
     }
-  }, [fund, gamePhase, navigate])
+  }, [fund, gamePhase, navigate]);
 
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [sentimentFilter, setSentimentFilter] = useState('all')
-  const [portfolioOnly, setPortfolioOnly] = useState(false)
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sentimentFilter, setSentimentFilter] = useState("all");
+  const [portfolioOnly, setPortfolioOnly] = useState(false);
 
   const filteredNews = useMemo(() => {
-    let items = [...news]
+    let items = [...news];
 
-    if (typeFilter !== 'all') {
-      items = items.filter((n) => n.type === typeFilter)
+    if (typeFilter !== "all") {
+      items = items.filter((n) => n.type === typeFilter);
     }
-    if (sentimentFilter !== 'all') {
-      items = items.filter((n) => n.sentiment === sentimentFilter)
+    if (sentimentFilter !== "all") {
+      items = items.filter((n) => n.sentiment === sentimentFilter);
     }
     if (portfolioOnly) {
-      items = items.filter((n) => n.portfolioRelated)
+      items = items.filter((n) => n.portfolioRelated);
     }
 
     // Chronological, newest first
-    items.sort((a, b) => b.month - a.month)
+    items.sort((a, b) => b.month - a.month);
 
-    return items
-  }, [news, typeFilter, sentimentFilter, portfolioOnly])
+    return items;
+  }, [news, typeFilter, sentimentFilter, portfolioOnly]);
 
-  if (!fund) return null
+  if (!fund) return null;
 
   return (
     <PageShell className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -99,7 +108,8 @@ export default function News() {
         <div>
           <h1 className="text-2xl font-bold">News Feed</h1>
           <p className="text-sm text-muted-foreground">
-            {news.length} total articles — Market intelligence and portfolio updates
+            {news.length} total articles — Market intelligence and portfolio
+            updates
           </p>
         </div>
       </div>
@@ -135,7 +145,7 @@ export default function News() {
         </Select>
 
         <Button
-          variant={portfolioOnly ? 'default' : 'outline'}
+          variant={portfolioOnly ? "default" : "outline"}
           size="sm"
           className="gap-1.5"
           onClick={() => setPortfolioOnly((prev) => !prev)}
@@ -153,8 +163,8 @@ export default function News() {
       {filteredNews.length > 0 ? (
         <div className="space-y-3 max-h-[calc(100dvh-14rem)] overflow-y-auto">
           {filteredNews.map((item) => {
-            const typeConf = TYPE_CONFIG[item.type]
-            const sentimentClass = SENTIMENT_DOT[item.sentiment]
+            const typeConf = TYPE_CONFIG[item.type];
+            const sentimentClass = SENTIMENT_DOT[item.sentiment];
 
             return (
               <Card key={item.id}>
@@ -168,11 +178,17 @@ export default function News() {
                     {/* Content */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={typeConf.className} variant="secondary">
+                        <Badge
+                          className={typeConf.className}
+                          variant="secondary"
+                        >
                           {typeConf.label}
                         </Badge>
                         {item.portfolioRelated && (
-                          <Badge variant="outline" className="text-[10px] py-0 gap-1">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] py-0 gap-1"
+                          >
                             <Briefcase className="h-2.5 w-2.5" />
                             Portfolio
                           </Badge>
@@ -195,22 +211,22 @@ export default function News() {
                   </div>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
       ) : (
         <div className="text-center py-16">
           <Newspaper className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-1">
-            {news.length === 0 ? 'No News Yet' : 'No Matches'}
+            {news.length === 0 ? "No News Yet" : "No Matches"}
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {news.length === 0
-              ? 'Market intelligence will flow in as you advance time. Expect funding rounds, exits, and sector trends.'
-              : 'No articles match your current filters. Try broadening your criteria.'}
+              ? "Market intelligence will flow in as you advance time. Expect funding rounds, exits, and sector trends."
+              : "No articles match your current filters. Try broadening your criteria."}
           </p>
         </div>
       )}
     </PageShell>
-  )
+  );
 }

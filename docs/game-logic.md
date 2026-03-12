@@ -44,6 +44,7 @@ bull → normal → cooldown → hard → normal → bull (repeats)
 ```
 
 **Transition rules:**
+
 - Checked every 12-24 months (random interval)
 - 60% chance to advance to next phase
 - 30% chance to stay in current phase
@@ -51,15 +52,15 @@ bull → normal → cooldown → hard → normal → bull (repeats)
 
 **Impact matrix:**
 
-| System | Bull | Normal | Cooldown | Hard |
-|--------|------|--------|----------|------|
-| Company growth | 1.15x | 1.0x | 0.85x | 0.70x |
-| Exit multiples | 1.3x | 1.0x | 0.8x | 0.6x |
-| Valuations | 1.4x | 1.0x | 0.7x | 0.5x |
-| Talent pool size | 6-10 | 8-12 | 10-14 | 12-15 |
-| Talent salary | 1.3x | 1.0x | 1.0x | 0.7x |
-| Founder willingness | -15 | 0 | +10 | +20 |
-| Hire probability | -15% | 0 | 0 | +20% |
+| System              | Bull  | Normal | Cooldown | Hard  |
+| ------------------- | ----- | ------ | -------- | ----- |
+| Company growth      | 1.15x | 1.0x   | 0.85x    | 0.70x |
+| Exit multiples      | 1.3x  | 1.0x   | 0.8x     | 0.6x  |
+| Valuations          | 1.4x  | 1.0x   | 0.7x     | 0.5x  |
+| Talent pool size    | 6-10  | 8-12   | 10-14    | 12-15 |
+| Talent salary       | 1.3x  | 1.0x   | 1.0x     | 0.7x  |
+| Founder willingness | -15   | 0      | +10      | +20   |
+| Hire probability    | -15%  | 0      | 0        | +20%  |
 
 ---
 
@@ -77,6 +78,7 @@ Every company outcome (fail, exit, growth) runs through a compound modifier stac
 | External | 1.00 | 1.00 |
 
 **Support score (if >30):**
+
 - failMod × 0.60, growthMod × 1.15
 
 **Relationship:**
@@ -145,6 +147,7 @@ if (roll < finalChance) → company fails
 ```
 
 On failure:
+
 - Status set to `failed`, valuation → 0, multiple → 0
 - Failure reason generated (contextual narrative)
 - News item created
@@ -198,6 +201,7 @@ finalGrowth = baseGrowth × marketMod[cycle] × compoundGrowthMod
 ```
 
 **Applied to metrics:**
+
 - `mrr × finalGrowth`
 - `customers × (1 + (finalGrowth - 1) × 0.5)` — customers grow at half the rate
 - `growthRate` clamped to 0-100%
@@ -205,6 +209,7 @@ finalGrowth = baseGrowth × marketMod[cycle] × compoundGrowthMod
 - `multiple = valuation / investedAmount`
 
 **Runway recalculation:**
+
 ```
 if burnRate > 0:
   netBurn = burnRate - mrr
@@ -218,12 +223,12 @@ if burnRate > 0:
 
 20% chance to transition each month. New state weighted by conditions:
 
-| Condition | Likely States |
-|-----------|--------------|
-| Growth >10% + relationship >60 | focused, coachable |
-| Growth <3% + relationship <40 | defensive, burned_out |
-| Growth >8% + support <30 | overconfident |
-| Otherwise | focused, distracted, coachable (mixed) |
+| Condition                      | Likely States                          |
+| ------------------------------ | -------------------------------------- |
+| Growth >10% + relationship >60 | focused, coachable                     |
+| Growth <3% + relationship <40  | defensive, burned_out                  |
+| Growth >8% + support <30       | overconfident                          |
+| Otherwise                      | focused, distracted, coachable (mixed) |
 
 ---
 
@@ -231,11 +236,11 @@ if burnRate > 0:
 
 Every month, relationship decreases unless protected:
 
-| Condition | Decay/month |
-|-----------|------------|
-| Board seat or majority | 0 (no decay) |
-| Lab/incubator origin or >50% ownership | -0.5 |
-| Default | -1.0 |
+| Condition                              | Decay/month  |
+| -------------------------------------- | ------------ |
+| Board seat or majority                 | 0 (no decay) |
+| Lab/incubator origin or >50% ownership | -0.5         |
+| Default                                | -1.0         |
 
 Minimum: 10. This means neglected companies slowly drift toward danger.
 
@@ -252,16 +257,19 @@ PMF also shifts from events and support actions. It's the single most impactful 
 ## Opportunity Generation
 
 **Follow-on opportunities** — Generated when:
+
 - `monthsActive > 6` AND `multiple > 2` AND `relationship > 40`
 - Round size: 15-30% of current valuation
 - Dilution if skipped: 5-15%
 
 **Pending decisions** — 25% chance per month if board seat or majority:
+
 - 5 archetypes (pivot, hire, restructure, etc.)
 - 3+ options with metric effects
 - 3-month deadline
 
 **Secondary offers** — 10% chance if `multiple > 3`:
+
 - Buyer offers 20-50% of your stake
 - At 70-95% of current multiple (discount)
 - 3-month expiration
@@ -275,6 +283,7 @@ Calculated every 12 months. 8 factors sum to a score (baseline 50, range 0-100):
 ### Factor Details
 
 **Portfolio Performance** (-20 to +20):
+
 ```
 weightedAvgMultiple = Σ(multiple × investedAmount) / Σ(investedAmount)
 if > 2.0x: score scales +10 to +20
@@ -283,6 +292,7 @@ if < 1.0x: score scales -20 to 0
 ```
 
 **Deployment Pace** (-10 to +10):
+
 ```
 deploymentRatio = deployed / fundSize
 
@@ -292,6 +302,7 @@ Years 8-10:  ≥70% = +5,    <50% = -5
 ```
 
 **Market Adjustment** (-15 to +15):
+
 ```
 Base: bull +8, normal +2, cooldown -5, hard -10
 Outperformance bonus (hard/cooldown): avgGrowth >8% → +5, TVPI >1.5x → +3
@@ -315,15 +326,15 @@ A: ≥3.5  B: ≥2.8  C: ≥2.0  D: ≥1.5  F: <1.5
 
 At month 120, final grade calculated:
 
-| Grade | Label |
-|-------|-------|
-| A+ | Legendary Fund |
-| A | Top-Tier |
-| B+ | Strong Performer |
-| B | Above Average |
-| C+ | Solid |
-| C | Middle of the Pack |
-| D | Below Average |
+| Grade | Label              |
+| ----- | ------------------ |
+| A+    | Legendary Fund     |
+| A     | Top-Tier           |
+| B+    | Strong Performer   |
+| B     | Above Average      |
+| C+    | Solid              |
+| C     | Middle of the Pack |
+| D     | Below Average      |
 
 Based on: final TVPI, IRR, exit count, LP sentiment history, skill level accumulated.
 
@@ -334,6 +345,7 @@ Based on: final TVPI, IRR, exit count, LP sentiment history, skill level accumul
 ## Rebirth Mechanic
 
 When starting a new fund after game end:
+
 - Skill level carries over (accumulated from all prior funds)
 - LP commitment modifier from final sentiment affects new fund size
 - Deal quality slightly improved at higher skill levels

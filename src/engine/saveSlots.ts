@@ -3,10 +3,10 @@
 // Manages up to 3 named save slots in localStorage.
 // ============================================================
 
-import type { SaveSlot } from './types';
+import type { SaveSlot } from "./types";
 
-const META_KEY = 'vencap-save-slots-meta';
-const SLOT_KEY_PREFIX = 'vencap-save-slot-';
+const META_KEY = "vencap-save-slots-meta";
+const SLOT_KEY_PREFIX = "vencap-save-slot-";
 
 /** Read all save slot metadata. */
 export function getSaveSlots(): SaveSlot[] {
@@ -30,12 +30,12 @@ export function saveToSlot(slotId: string, name: string, state: unknown): void {
     id: slotId,
     name,
     savedAt: Date.now(),
-    fundName: fund?.name as string ?? 'Unknown Fund',
+    fundName: (fund?.name as string) ?? "Unknown Fund",
     month: (fund?.currentMonth as number) ?? 0,
     tvpiGross: (fund?.tvpiEstimate as number) ?? 1.0,
   };
 
-  const idx = meta.findIndex(s => s.id === slotId);
+  const idx = meta.findIndex((s) => s.id === slotId);
   if (idx >= 0) {
     meta[idx] = slot;
   } else {
@@ -57,6 +57,6 @@ export function loadFromSlot(slotId: string): Record<string, unknown> | null {
 /** Delete a save slot. */
 export function deleteSlot(slotId: string): void {
   localStorage.removeItem(`${SLOT_KEY_PREFIX}${slotId}`);
-  const meta = getSaveSlots().filter(s => s.id !== slotId);
+  const meta = getSaveSlots().filter((s) => s.id !== slotId);
   localStorage.setItem(META_KEY, JSON.stringify(meta));
 }
