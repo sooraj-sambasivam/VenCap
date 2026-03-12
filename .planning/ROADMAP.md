@@ -151,7 +151,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | ------------------------ | -------------- | ----------- | ---------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -          |
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
-| 3. Timeline Modes        | 2/2 | Complete   | 2026-03-12 |
+| 3. Timeline Modes        | 2/2            | Complete    | 2026-03-12 |
 | 4. Fundraising Flow      | 0/TBD          | Not started | -          |
 | 5. VC Skills System      | 0/TBD          | Not started | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |

@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: milestone
 status: planning
 stopped_at: Completed 03-02-PLAN.md — timeline modes UI (wizard, dashboard badge, deal gates)
-last_updated: "2026-03-12T08:42:29.768Z"
+last_updated: "2026-03-12T08:47:59.310Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
