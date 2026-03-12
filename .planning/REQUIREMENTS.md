@@ -16,7 +16,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Timeline Modes
 
-- [ ] **TIME-01**: User can select IRL or Freeplay mode at session start (fund setup wizard)
+- [x] **TIME-01**: User can select IRL or Freeplay mode at session start (fund setup wizard)
 - [x] **TIME-02**: IRL mode gates actions behind realistic time delays with "available in N months" display
 - [x] **TIME-03**: Freeplay mode removes all time gates for accelerated play
 - [x] **TIME-04**: IRL gates calibrated to real VC cadence (seed check 2-4 weeks, LP close 6-12 months, due diligence 1-3 months)
@@ -119,7 +119,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-02    | Phase 1 | Pending  |
 | FOUND-03    | Phase 2 | Complete |
 | FOUND-04    | Phase 2 | Complete |
-| TIME-01     | Phase 3 | Pending  |
+| TIME-01     | Phase 3 | Complete |
 | TIME-02     | Phase 3 | Complete |
 | TIME-03     | Phase 3 | Complete |
 | TIME-04     | Phase 3 | Complete |

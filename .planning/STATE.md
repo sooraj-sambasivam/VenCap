@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-01-PLAN.md — timeline gates engine module
-last_updated: "2026-03-12T08:31:56.988Z"
+stopped_at: Completed 03-02-PLAN.md — timeline modes UI (wizard, dashboard badge, deal gates)
+last_updated: "2026-03-12T08:42:29.768Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 _Updated after each plan completion_
 | Phase 02-infrastructure-setup P01 | 2 | 2 tasks | 5 files |
 | Phase 03-timeline-modes P01 | 8 | 2 tasks | 4 files |
+| Phase 03-timeline-modes P02 | 12 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 02-infrastructure-setup]: i18n shim is a v1 passthrough (returns fallback ?? key) — no react-i18next needed yet; v2 replaces when multi-locale support required
 - [Phase 02-infrastructure-setup]: SpeedInsights placed inside BrowserRouter after Toaster with no props — defaults auto-detect environment and are no-op in local dev
 - [Phase 03-timeline-modes]: IRL gate check placed before checkCanInvest — DD cooldown blocks regardless of check size, prevents wrong reason masking gate message
+- [Phase 03-timeline-modes]: Gate display via optional gateMessage prop in DealCard — parent computes gate, passes string down, leaf stays pure and fund-unaware
+- [Phase 03-timeline-modes]: IRL Pacing badge placed as standalone element after scenario banner — avoids coupling two independent display concerns
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T08:31:56.986Z
-Stopped at: Completed 03-01-PLAN.md — timeline gates engine module
+Last session: 2026-03-12T08:42:29.766Z
+Stopped at: Completed 03-02-PLAN.md — timeline modes UI (wizard, dashboard badge, deal gates)
 Resume file: None

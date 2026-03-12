@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Types Foundation** - Add all new types to types.ts in one batch and fix GameSnapshot aliasing
 - [x] **Phase 2: Infrastructure Setup** - Install Speed Insights and wire i18n shim so all subsequent UI is ready (completed 2026-03-12)
-- [ ] **Phase 3: Timeline Modes** - IRL vs Freeplay toggle at fund start with realistic gate calibration throughout
+- [x] **Phase 3: Timeline Modes** - IRL vs Freeplay toggle at fund start with realistic gate calibration throughout (completed 2026-03-12)
 - [ ] **Phase 4: Fundraising Flow** - LP pitching, commitment tracking, closing mechanics, and Fund II/III unlock
 - [ ] **Phase 5: VC Skills System** - 19-skill tracking engine, career title progression, and dedicated skills page
 - [ ] **Phase 6: Interaction Feedback** - Micro-animations, contextual tooltips, outcome previews, and tick summaries
@@ -65,7 +65,7 @@ Plans:
 3. In Freeplay mode, the same actions are immediately available with no cooldown display
 4. `timelineMode` is stored on the `Fund` type in engine state — it is not a React component flag and cannot be changed after fund init
 5. IRL gate calibrations match real VC cadences (defined as named constants, not magic numbers)
-   **Plans:** 1/2 plans executed
+   **Plans:** 2/2 plans complete
 
 Plans:
 
@@ -151,7 +151,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | ------------------------ | -------------- | ----------- | ---------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -          |
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
-| 3. Timeline Modes        | 1/2 | In Progress|  |
+| 3. Timeline Modes        | 2/2 | Complete   | 2026-03-12 |
 | 4. Fundraising Flow      | 0/TBD          | Not started | -          |
 | 5. VC Skills System      | 0/TBD          | Not started | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |
