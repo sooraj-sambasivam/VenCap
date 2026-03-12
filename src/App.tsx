@@ -18,6 +18,7 @@ const News = lazy(() => import("@/pages/News"));
 const Reports = lazy(() => import("@/pages/Reports"));
 const Results = lazy(() => import("@/pages/Results"));
 const Fundraising = lazy(() => import("@/pages/Fundraising"));
+const Skills = lazy(() => import("@/pages/Skills"));
 
 function PageLoader() {
   return (
@@ -66,6 +67,7 @@ function App() {
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/fundraising" element={<Fundraising />} />
+                <Route path="/skills" element={<Skills />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

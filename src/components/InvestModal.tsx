@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { previewInvest } from "@/engine/actionPreview";
+import { ActionPreviewPanel } from "@/components/ActionPreviewPanel";
 
 interface InvestModalProps {
   startup: Startup | null;
@@ -220,6 +222,13 @@ export default function InvestModal({
               There is a significant chance the founder will reject this
               investment.
             </p>
+          )}
+
+          {/* Action Preview */}
+          {validation.allowed && !gateBlocked && (
+            <ActionPreviewPanel
+              preview={previewInvest(fund, startup, amount, ownership)}
+            />
           )}
 
           {/* Validation Error */}

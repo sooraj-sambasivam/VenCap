@@ -18,6 +18,7 @@ const SHORTCUTS = [
   { key: "n", label: "News", path: "/news" },
   { key: "r", label: "Reports", path: "/reports" },
   { key: "f", label: "Fundraising", path: "/fundraising" },
+  { key: "s", label: "Skills", path: "/skills" },
 ] as const;
 
 export function KeyboardShortcuts() {

@@ -17,6 +17,7 @@ const NAV_LINKS: readonly { to: string; label: string; tourId?: string }[] = [
   { to: "/news", label: "News" },
   { to: "/reports", label: "Reports", tourId: "nav-reports" },
   { to: "/fundraising", label: "Fundraising" },
+  { to: "/skills", label: "Skills" },
 ];
 
 export default function NavBar() {

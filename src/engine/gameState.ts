@@ -113,6 +113,22 @@ import {
   DEFAULT_FUND_TERMS,
 } from "./fundraising";
 import type { FundTermsConfig } from "./types";
+import {
+  applyXPAwards,
+  getInvestXP,
+  getFollowOnXP,
+  getSupportActionXP,
+  getBoardMeetingXP,
+  getDecisionXP,
+  getLPActionXP,
+  getSecondaryXP,
+  getBuyoutXP,
+  getHireTalentXP,
+  getIncubatorXP,
+  getLabSpinOutXP,
+  getFundraisingXP,
+  getMonthlyPassiveXP,
+} from "./skills";
 
 // ============================================================
 // INITIAL STATE
@@ -2248,6 +2264,13 @@ export const useGameStore = create<GameState>()(
           (b) => b.expiresMonth >= fund.currentMonth,
         );
 
+        // ==== STEP 7.5: Passive Skill XP ====
+        const activeCount = portfolio.filter(
+          (c) => c.status === "active",
+        ).length;
+        const passiveXP = getMonthlyPassiveXP(activeCount);
+        const updatedProfile = applyXPAwards(state.playerProfile, passiveXP);
+
         // ==== STEP 8: Check Achievements ====
         const achievementCtx = fund
           ? {
@@ -2295,6 +2318,8 @@ export const useGameStore = create<GameState>()(
           // Real economy
           currentEconomicSnapshot: econSnapshot,
           currentMarketConditions: mktConditions,
+          // Skills — passive XP each month
+          playerProfile: updatedProfile,
         });
       },
 
@@ -2386,6 +2411,12 @@ export const useGameStore = create<GameState>()(
           ],
         });
 
+        // Award LP action XP
+        const postLP = get();
+        set({
+          playerProfile: applyXPAwards(postLP.playerProfile, getLPActionXP()),
+        });
+
         return { success: true, sentimentGain: effect.sentimentDelta };
       },
 
@@ -2472,6 +2503,10 @@ export const useGameStore = create<GameState>()(
                   }),
                 }
               : m,
+          ),
+          playerProfile: applyXPAwards(
+            state.playerProfile,
+            getBoardMeetingXP(meeting.agendaItems.length),
           ),
         });
       },
@@ -2583,6 +2618,15 @@ export const useGameStore = create<GameState>()(
           set({ syndicatePartners: updated });
         }
 
+        // Award skill XP for investing
+        const investState = get();
+        set({
+          playerProfile: applyXPAwards(
+            investState.playerProfile,
+            getInvestXP(startup.stage),
+          ),
+        });
+
         return { success: true };
       },
 
@@ -2633,6 +2677,7 @@ export const useGameStore = create<GameState>()(
           followOnOpportunities: state.followOnOpportunities.filter(
             (f) => f.companyId !== companyId,
           ),
+          playerProfile: applyXPAwards(state.playerProfile, getFollowOnXP()),
         });
       },
 
@@ -2700,6 +2745,7 @@ export const useGameStore = create<GameState>()(
           secondaryOffers: state.secondaryOffers.filter(
             (s) => s.id !== offerId,
           ),
+          playerProfile: applyXPAwards(state.playerProfile, getSecondaryXP()),
         });
       },
 
@@ -2797,6 +2843,11 @@ export const useGameStore = create<GameState>()(
               companyId: company.id,
             },
           ],
+        });
+        // Award XP for successful buyout exit
+        const postBuyout = get();
+        set({
+          playerProfile: applyXPAwards(postBuyout.playerProfile, getBuyoutXP()),
         });
       },
 
@@ -2903,6 +2954,7 @@ export const useGameStore = create<GameState>()(
             (d) => d.id !== decisionId,
           ),
           decisionHistory: [...(state.decisionHistory || []), record],
+          playerProfile: applyXPAwards(state.playerProfile, getDecisionXP()),
         });
       },
 
@@ -2948,6 +3000,7 @@ export const useGameStore = create<GameState>()(
             return updated;
           }),
           talentPool: state.talentPool.filter((t) => t.id !== talentId),
+          playerProfile: applyXPAwards(state.playerProfile, getHireTalentXP()),
         });
       },
 
@@ -2989,6 +3042,10 @@ export const useGameStore = create<GameState>()(
               ),
             };
           }),
+          playerProfile: applyXPAwards(
+            state.playerProfile,
+            getSupportActionXP(action),
+          ),
         });
       },
 
@@ -3045,6 +3102,7 @@ export const useGameStore = create<GameState>()(
               };
             }),
           },
+          playerProfile: applyXPAwards(state.playerProfile, getIncubatorXP()),
         });
       },
 
@@ -3172,6 +3230,7 @@ export const useGameStore = create<GameState>()(
           labProjects: state.labProjects.map((p) =>
             p.id === projectId ? { ...p, status: "spun_out" as const } : p,
           ),
+          playerProfile: applyXPAwards(state.playerProfile, getLabSpinOutXP()),
         });
       },
 
@@ -3294,7 +3353,13 @@ export const useGameStore = create<GameState>()(
           launchedMonth: fund.currentMonth,
         };
 
-        set({ activeCampaign: campaign });
+        set({
+          activeCampaign: campaign,
+          playerProfile: applyXPAwards(
+            get().playerProfile,
+            getFundraisingXP("launch"),
+          ),
+        });
         return { success: true };
       },
 
@@ -3344,6 +3409,10 @@ export const useGameStore = create<GameState>()(
                 },
               ]
             : state.news,
+          playerProfile: applyXPAwards(
+            state.playerProfile,
+            getFundraisingXP("pitch"),
+          ),
         });
 
         return {
@@ -3451,7 +3520,10 @@ export const useGameStore = create<GameState>()(
 
         // Terminal action: push snapshot before reset, then clear history
         const snapshot = captureSnapshot(state);
-        const playerProfile = state.playerProfile;
+        const playerProfile = applyXPAwards(
+          state.playerProfile,
+          getFundraisingXP("close"),
+        );
         const fundNumber = (state.fund.fundNumber ?? 1) + 1;
         const skillLevel = state.fund.skillLevel + 1;
         const rebirthCount = state.fund.rebirthCount + 1;
