@@ -18,6 +18,10 @@ import { t } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/utils";
 import { SCENARIOS } from "@/engine/scenarios";
 import {
+  FUND_II_TVPI_THRESHOLD,
+  FUND_III_TVPI_THRESHOLD,
+} from "@/engine/fundraising";
+import {
   getAvailableEras,
   isFredApiKeyConfigured,
 } from "@/engine/economicData";
@@ -178,6 +182,19 @@ export default function Index() {
   // Rebirth detection
   const rebirthCount = fund?.rebirthCount ?? 0;
   const skillLevel = fund?.skillLevel ?? 1;
+  const fundNumber = fund?.fundNumber ?? 1;
+
+  // Fund II/III unlock display
+  // Only show when entering setup via completeFundClose (fundNumber > 1)
+  // and not during active play (gamePhase is "setup" here already)
+  const isNextFund = fundNumber > 1;
+  const fundGenLabel = fundNumber === 2 ? "II" : fundNumber === 3 ? "III" : "";
+  const tvpiThreshold =
+    fundNumber === 2
+      ? FUND_II_TVPI_THRESHOLD
+      : fundNumber === 3
+        ? FUND_III_TVPI_THRESHOLD
+        : null;
 
   // Get selected fund type config
   const selectedTypeConfig = FUND_TYPES.find((t) => t.value === fundType);
@@ -319,6 +336,20 @@ export default function Index() {
                 Every great fund starts with a name.
               </p>
             </div>
+
+            {/* Fund II/III unlock badge — only when coming through completeFundClose */}
+            {isNextFund && fundGenLabel && tvpiThreshold !== null && (
+              <div className="flex flex-col items-center gap-2">
+                <Badge className="bg-primary/20 text-primary px-4 py-1.5 text-sm font-semibold">
+                  Fund {fundGenLabel} Unlocked
+                </Badge>
+                <p className="text-xs text-muted-foreground text-center">
+                  Your Fund {fundNumber - 1} achieved the {tvpiThreshold}x TVPI
+                  threshold — you have earned the right to raise Fund{" "}
+                  {fundGenLabel}.
+                </p>
+              </div>
+            )}
 
             <div className="max-w-md mx-auto space-y-4">
               <Input
