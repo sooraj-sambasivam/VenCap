@@ -1,21 +1,22 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { TooltipProvider } from '@/components/ui/tooltip'
-import { Toaster } from '@/components/ui/sonner'
-import { Skeleton } from '@/components/ui/skeleton'
-import NavBar from '@/components/NavBar'
-import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import Index from '@/pages/Index'
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import NavBar from "@/components/NavBar";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Index from "@/pages/Index";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const Deals = lazy(() => import('@/pages/Deals'))
-const Portfolio = lazy(() => import('@/pages/Portfolio'))
-const Incubator = lazy(() => import('@/pages/Incubator'))
-const Lab = lazy(() => import('@/pages/Lab'))
-const News = lazy(() => import('@/pages/News'))
-const Reports = lazy(() => import('@/pages/Reports'))
-const Results = lazy(() => import('@/pages/Results'))
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Deals = lazy(() => import("@/pages/Deals"));
+const Portfolio = lazy(() => import("@/pages/Portfolio"));
+const Incubator = lazy(() => import("@/pages/Incubator"));
+const Lab = lazy(() => import("@/pages/Lab"));
+const News = lazy(() => import("@/pages/News"));
+const Reports = lazy(() => import("@/pages/Reports"));
+const Results = lazy(() => import("@/pages/Results"));
 
 function PageLoader() {
   return (
@@ -33,7 +34,7 @@ function PageLoader() {
         <Skeleton className="h-40 rounded-lg" />
       </div>
     </div>
-  )
+  );
 }
 
 function App() {
@@ -47,7 +48,10 @@ function App() {
           Skip to main content
         </a>
         <NavBar />
-        <main id="main-content" className="min-h-screen bg-background pt-14 text-foreground">
+        <main
+          id="main-content"
+          className="min-h-screen bg-background pt-14 text-foreground"
+        >
           <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -67,9 +71,10 @@ function App() {
         </main>
         <KeyboardShortcuts />
         <Toaster />
+        <SpeedInsights />
       </TooltipProvider>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
