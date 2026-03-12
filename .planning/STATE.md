@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04-02-PLAN.md — 5 fundraising store actions (launchCampaign, pitchLP, advanceFundClose, configureFundTerms, completeFundClose)
-last_updated: "2026-03-12T09:18:07.371Z"
+stopped_at: Completed 04-03-PLAN.md — Fundraising page, routing, NavBar link, keyboard shortcut, Fund II unlock badge
+last_updated: "2026-03-12T09:25:01.545Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -57,6 +57,7 @@ _Updated after each plan completion_
 | Phase 03-timeline-modes P02 | 12 | 2 tasks | 5 files |
 | Phase 04-fundraising-flow P01 | 4 | 3 tasks | 2 files |
 | Phase 04-fundraising-flow P02 | 3 | 1 tasks | 3 files |
+| Phase 04-fundraising-flow P03 | 4 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 04-fundraising-flow]: Pitch probability: baseProbability(0.6/0.5/0.4/0.7) _ interestFactor _ relationshipFactor _ commitmentMod(lp/50 clamped 0.7-1.3) _ marketMod
 - [Phase 04-fundraising-flow]: configureFundTerms uses single set() to update activeCampaign.terms AND fund economics atomically — prevents stale fee rate pitfall
 - [Phase 04-fundraising-flow]: completeFundClose clears history immediately — terminal action not undoable, mirrors rebirth() pattern
+- [Phase 04-fundraising-flow]: localTerms pattern in Fundraising.tsx: local React state for slider edits, store updated only on explicit Save — avoids partial term writes mid-edit
+- [Phase 04-fundraising-flow]: Fund unlock badge uses fundNumber > 1 (not canStartNextFund) — completeFundClose partial stub lacks tvpiEstimate/nextFundUnlockTvpi, making threshold check unreliable
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T09:18:07.369Z
-Stopped at: Completed 04-02-PLAN.md — 5 fundraising store actions (launchCampaign, pitchLP, advanceFundClose, configureFundTerms, completeFundClose)
+Last session: 2026-03-12T09:25:01.544Z
+Stopped at: Completed 04-03-PLAN.md — Fundraising page, routing, NavBar link, keyboard shortcut, Fund II unlock badge
 Resume file: None

@@ -30,7 +30,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FUND-04**: Fund size negotiation based on LP interest and market conditions
 - [x] **FUND-05**: Progressive fund unlock — Fund II available after Fund I meets performance thresholds
 - [x] **FUND-06**: Fund II/III creation resets economics counters atomically via `completeFundClose()` action
-- [ ] **FUND-07**: Fundraising page with dedicated UI for the LP pitching and closing flow
+- [x] **FUND-07**: Fundraising page with dedicated UI for the LP pitching and closing flow
 
 ### Interaction Feedback
 
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FUND-04     | Phase 4 | Complete |
 | FUND-05     | Phase 4 | Complete |
 | FUND-06     | Phase 4 | Complete |
-| FUND-07     | Phase 4 | Pending  |
+| FUND-07     | Phase 4 | Complete |
 | SKIL-01     | Phase 5 | Pending  |
 | SKIL-02     | Phase 5 | Pending  |
 | SKIL-03     | Phase 5 | Pending  |
