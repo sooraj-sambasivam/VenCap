@@ -65,7 +65,7 @@ Plans:
 3. In Freeplay mode, the same actions are immediately available with no cooldown display
 4. `timelineMode` is stored on the `Fund` type in engine state — it is not a React component flag and cannot be changed after fund init
 5. IRL gate calibrations match real VC cadences (defined as named constants, not magic numbers)
-   **Plans:** 2 plans
+   **Plans:** 1/2 plans executed
 
 Plans:
 
@@ -151,7 +151,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | ------------------------ | -------------- | ----------- | ---------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -          |
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
-| 3. Timeline Modes        | 0/2            | Planning    | -          |
+| 3. Timeline Modes        | 1/2 | In Progress|  |
 | 4. Fundraising Flow      | 0/TBD          | Not started | -          |
 | 5. VC Skills System      | 0/TBD          | Not started | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |

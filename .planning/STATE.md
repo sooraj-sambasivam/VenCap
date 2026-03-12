@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-01-PLAN.md — i18n shim and SpeedInsights
-last_updated: "2026-03-12T07:55:57.087Z"
+stopped_at: Completed 03-01-PLAN.md — timeline gates engine module
+last_updated: "2026-03-12T08:31:56.988Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 3
+  completed_plans: 2
   percent: 0
 ---
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 _Updated after each plan completion_
 | Phase 02-infrastructure-setup P01 | 2 | 2 tasks | 5 files |
+| Phase 03-timeline-modes P01 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ Recent decisions affecting current work:
 - Skills XP curve (action-to-skill mapping): design surface to produce during Phase 5 planning
 - [Phase 02-infrastructure-setup]: i18n shim is a v1 passthrough (returns fallback ?? key) — no react-i18next needed yet; v2 replaces when multi-locale support required
 - [Phase 02-infrastructure-setup]: SpeedInsights placed inside BrowserRouter after Toaster with no props — defaults auto-detect environment and are no-op in local dev
+- [Phase 03-timeline-modes]: IRL gate check placed before checkCanInvest — DD cooldown blocks regardless of check size, prevents wrong reason masking gate message
 
 ### Pending Todos
 
@@ -81,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T07:53:23.642Z
-Stopped at: Completed 02-01-PLAN.md — i18n shim and SpeedInsights
+Last session: 2026-03-12T08:31:56.986Z
+Stopped at: Completed 03-01-PLAN.md — timeline gates engine module
 Resume file: None
