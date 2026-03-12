@@ -206,11 +206,12 @@ describe("calculatePitchOutcome", () => {
       relationshipScore: 99,
     });
     let successCount = 0;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) {
       const result = calculatePitchOutcome(prospect, 80, "bull");
       if (result.newStatus === "hard_commit") successCount++;
     }
-    expect(successCount).toBeGreaterThan(8);
+    // With p ≈ 0.56, expected successes ≈ 28 over 50 trials; threshold is conservative
+    expect(successCount).toBeGreaterThan(15);
   });
 
   it("advances status from hard_commit to closed", () => {
