@@ -80,12 +80,18 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
 1. A dedicated `/fundraising` page shows LP prospects, committed vs called capital, and a progress bar toward the fund target
-2. Player can pitch an LP and see commitment status advance through soft-circle → hard-commit → closed states
+2. Player can pitch an LP and see commitment status advance through soft-circle -> hard-commit -> closed states
 3. First close and final close milestones are visible on the fundraising page with progress indicators
 4. Player can configure management fee %, carry %, and fund life years before closing — these values affect fund economics calculations
 5. Fund II becomes available in the fund setup wizard when Fund I's net TVPI meets the defined threshold; Fund III similarly requires Fund II threshold
 6. Closing a new fund via `completeFundClose()` atomically resets economics counters (fees, carry, GP earnings) without affecting skills
-   **Plans**: TBD
+   **Plans:** 3 plans
+
+Plans:
+
+- [ ] 04-01-PLAN.md — Pure engine module: fundraising.ts with LP generation, pitch logic, close mechanics, TVPI thresholds (TDD)
+- [ ] 04-02-PLAN.md — Store actions: launchCampaign, pitchLP, advanceFundClose, configureFundTerms, completeFundClose
+- [ ] 04-03-PLAN.md — UI: /fundraising page, routing, NavBar, Fund II/III wizard gate
 
 ### Phase 5: VC Skills System
 
@@ -145,14 +151,14 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase                    | Plans Complete | Status      | Completed  |
 | ------------------------ | -------------- | ----------- | ---------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -          |
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
 | 3. Timeline Modes        | 2/2            | Complete    | 2026-03-12 |
-| 4. Fundraising Flow      | 0/TBD          | Not started | -          |
+| 4. Fundraising Flow      | 0/3            | Not started | -          |
 | 5. VC Skills System      | 0/TBD          | Not started | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |
 | 7. LLM Report Generation | 0/TBD          | Not started | -          |
