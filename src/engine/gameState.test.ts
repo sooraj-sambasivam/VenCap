@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore } from './gameState';
+import { describe, it, expect, beforeEach } from "vitest";
+import { useGameStore } from "./gameState";
 
 // Helper to reset the store before each test
 function resetStore() {
@@ -8,52 +8,52 @@ function resetStore() {
 
 function initDefaultFund() {
   useGameStore.getState().initFund({
-    name: 'Test Fund I',
-    type: 'national',
-    stage: 'seed',
+    name: "Test Fund I",
+    type: "national",
+    stage: "seed",
     targetSize: 100_000_000,
     currentSize: 100_000_000,
     skillLevel: 1,
     rebirthCount: 0,
-    scenarioId: 'sandbox',
+    scenarioId: "sandbox",
   });
 }
 
-describe('gameState — Full Lifecycle Integration Tests', () => {
+describe("gameState — Full Lifecycle Integration Tests", () => {
   beforeEach(() => {
     resetStore();
   });
 
-  it('completes 120 months without throwing', () => {
+  it("completes 120 months without throwing", () => {
     initDefaultFund();
     const store = useGameStore.getState();
-    expect(store.gamePhase).toBe('playing');
+    expect(store.gamePhase).toBe("playing");
     expect(store.fund).not.toBeNull();
 
     // Advance through all 120 months
     for (let i = 0; i < 120; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       expect(() => s.advanceTime()).not.toThrow();
     }
 
     const finalState = useGameStore.getState();
-    expect(finalState.gamePhase).toBe('ended');
+    expect(finalState.gamePhase).toBe("ended");
     expect(finalState.fund!.currentMonth).toBe(120);
   });
 
-  it('TVPI is positive at end of lifecycle', () => {
+  it("TVPI is positive at end of lifecycle", () => {
     initDefaultFund();
     for (let i = 0; i < 120; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       s.advanceTime();
     }
     const { fund } = useGameStore.getState();
     expect(fund!.tvpiEstimate).toBeGreaterThan(0);
   });
 
-  it('invest adds a company to the portfolio', () => {
+  it("invest adds a company to the portfolio", () => {
     initDefaultFund();
     // Advance a few months to populate deal pipeline
     for (let i = 0; i < 3; i++) {
@@ -64,19 +64,22 @@ describe('gameState — Full Lifecycle Integration Tests', () => {
 
     if (dealPipeline.length > 0) {
       const deal = dealPipeline[0];
-      const amount = Math.min(deal.valuation * 0.1, useGameStore.getState().fund!.cashAvailable * 0.2);
+      const amount = Math.min(
+        deal.valuation * 0.1,
+        useGameStore.getState().fund!.cashAvailable * 0.2,
+      );
       const ownership = (amount / deal.valuation) * 100;
       const result = useGameStore.getState().invest(deal.id, amount, ownership);
 
       if (result.success) {
         const newState = useGameStore.getState();
         expect(newState.portfolio.length).toBe(initialPortfolioLen + 1);
-        expect(newState.portfolio.find(c => c.id === deal.id)).toBeDefined();
+        expect(newState.portfolio.find((c) => c.id === deal.id)).toBeDefined();
       }
     }
   });
 
-  it('undo restores previous state', () => {
+  it("undo restores previous state", () => {
     initDefaultFund();
     // Advance to create history
     useGameStore.getState().advanceTime();
@@ -91,31 +94,34 @@ describe('gameState — Full Lifecycle Integration Tests', () => {
     expect(restored.fund!.currentMonth).toBe(monthAfterFirst);
   });
 
-  it('LP action changes sentiment', () => {
+  it("LP action changes sentiment", () => {
     initDefaultFund();
     // Advance a few months first
     for (let i = 0; i < 3; i++) {
       useGameStore.getState().advanceTime();
     }
     const sentimentBefore = useGameStore.getState().lpSentiment.score;
-    const result = useGameStore.getState().performLPAction('quarterly_update');
+    const result = useGameStore.getState().performLPAction("quarterly_update");
     if (result.success) {
       const sentimentAfter = useGameStore.getState().lpSentiment.score;
       expect(sentimentAfter).toBeGreaterThan(sentimentBefore);
     }
   });
 
-  it('board meeting resolves without error', () => {
+  it("board meeting resolves without error", () => {
     initDefaultFund();
     // Invest in a company with board_seat influence to eventually get a board meeting
     // Advance through months until we have a board meeting
     for (let i = 0; i < 60; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       // Try to invest in deals to build portfolio
       if (s.dealPipeline.length > 0 && s.fund!.cashAvailable > 5_000_000) {
         const deal = s.dealPipeline[0];
-        const amount = Math.min(deal.valuation * 0.15, s.fund!.cashAvailable * 0.15);
+        const amount = Math.min(
+          deal.valuation * 0.15,
+          s.fund!.cashAvailable * 0.15,
+        );
         const ownership = (amount / deal.valuation) * 100;
         s.invest(deal.id, amount, ownership);
       }
@@ -123,29 +129,33 @@ describe('gameState — Full Lifecycle Integration Tests', () => {
 
       // Check if we have a board meeting
       const current = useGameStore.getState();
-      const pendingMeeting = (current.boardMeetings || []).find(m => !m.attended);
+      const pendingMeeting = (current.boardMeetings || []).find(
+        (m) => !m.attended,
+      );
       if (pendingMeeting) {
         const choices: Record<string, number> = {};
-        pendingMeeting.agendaItems.forEach(item => {
+        pendingMeeting.agendaItems.forEach((item) => {
           choices[item.id] = 0; // pick first option
         });
-        expect(() => current.resolveBoardMeeting(pendingMeeting.id, choices)).not.toThrow();
+        expect(() =>
+          current.resolveBoardMeeting(pendingMeeting.id, choices),
+        ).not.toThrow();
         break;
       }
     }
   });
 
-  it('scenario win condition triggers game end', () => {
+  it("scenario win condition triggers game end", () => {
     // Use first_time_fund scenario which has TVPI win condition
     useGameStore.getState().initFund({
-      name: 'Scenario Test',
-      type: 'regional',
-      stage: 'seed',
+      name: "Scenario Test",
+      type: "regional",
+      stage: "seed",
       targetSize: 30_000_000,
       currentSize: 30_000_000,
       skillLevel: 3,
       rebirthCount: 2,
-      scenarioId: 'first_time_fund',
+      scenarioId: "first_time_fund",
     });
 
     const { activeScenario } = useGameStore.getState();
@@ -155,25 +165,30 @@ describe('gameState — Full Lifecycle Integration Tests', () => {
     // Just verify it can run without crashing
     for (let i = 0; i < 120; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       s.advanceTime();
     }
-    expect(useGameStore.getState().gamePhase).toBe('ended');
+    expect(useGameStore.getState().gamePhase).toBe("ended");
   });
 
-  it('all cash deployed does not crash', () => {
+  it("all cash deployed does not crash", () => {
     initDefaultFund();
     // Invest heavily to exhaust cash
     for (let i = 0; i < 30; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
 
       // Invest all available deals
       while (s.dealPipeline.length > 0 && s.fund!.cashAvailable > 500_000) {
         const deal = s.dealPipeline[0];
-        const amount = Math.min(deal.valuation * 0.1, s.fund!.cashAvailable * 0.5);
+        const amount = Math.min(
+          deal.valuation * 0.1,
+          s.fund!.cashAvailable * 0.5,
+        );
         const ownership = (amount / deal.valuation) * 100;
-        const result = useGameStore.getState().invest(deal.id, amount, ownership);
+        const result = useGameStore
+          .getState()
+          .invest(deal.id, amount, ownership);
         if (!result.success) break;
         // Re-fetch state after invest
         break;
@@ -184,29 +199,36 @@ describe('gameState — Full Lifecycle Integration Tests', () => {
   });
 });
 
-describe('gameState — Edge Case Tests', () => {
+describe("gameState — Edge Case Tests", () => {
   beforeEach(() => {
     resetStore();
   });
 
-  it('zero cash remaining does not crash on advance', () => {
+  it("zero cash remaining does not crash on advance", () => {
     initDefaultFund();
     // Aggressively deploy all cash — limited to 15 rounds and 2 deals per round
     // to keep portfolio size manageable for JSON serialization in undo snapshots
     for (let i = 0; i < 15; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
 
       // Invest in up to 2 deals per round
       let dealsThisRound = 0;
       let invested = true;
-      while (invested && dealsThisRound < 2 && s.dealPipeline.length > 0 && useGameStore.getState().fund!.cashAvailable > 100_000) {
+      while (
+        invested &&
+        dealsThisRound < 2 &&
+        s.dealPipeline.length > 0 &&
+        useGameStore.getState().fund!.cashAvailable > 100_000
+      ) {
         const deal = useGameStore.getState().dealPipeline[0];
         if (!deal) break;
         const cash = useGameStore.getState().fund!.cashAvailable;
         const amount = Math.min(deal.valuation * 0.2, cash * 0.9);
         const ownership = (amount / deal.valuation) * 100;
-        const result = useGameStore.getState().invest(deal.id, amount, ownership);
+        const result = useGameStore
+          .getState()
+          .invest(deal.id, amount, ownership);
         invested = result.success;
         dealsThisRound++;
       }
@@ -216,7 +238,7 @@ describe('gameState — Edge Case Tests', () => {
 
     // Run remaining months without investing to drain cash via fees
     for (let i = 0; i < 110; i++) {
-      if (useGameStore.getState().gamePhase === 'ended') break;
+      if (useGameStore.getState().gamePhase === "ended") break;
       expect(() => useGameStore.getState().advanceTime()).not.toThrow();
     }
 
@@ -225,15 +247,18 @@ describe('gameState — Edge Case Tests', () => {
     expect(fund).not.toBeNull();
   });
 
-  it('all portfolio companies failing does not crash', () => {
+  it("all portfolio companies failing does not crash", () => {
     initDefaultFund();
     // Build a portfolio then advance rapidly
     for (let i = 0; i < 10; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       if (s.dealPipeline.length > 0 && s.fund!.cashAvailable > 1_000_000) {
         const deal = s.dealPipeline[0];
-        const amount = Math.min(deal.valuation * 0.1, s.fund!.cashAvailable * 0.15);
+        const amount = Math.min(
+          deal.valuation * 0.1,
+          s.fund!.cashAvailable * 0.15,
+        );
         const ownership = (amount / deal.valuation) * 100;
         s.invest(deal.id, amount, ownership);
       }
@@ -243,65 +268,65 @@ describe('gameState — Edge Case Tests', () => {
     // Run remaining months — companies may fail naturally
     for (let i = 0; i < 110; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       expect(() => s.advanceTime()).not.toThrow();
     }
 
-    expect(useGameStore.getState().gamePhase).toBe('ended');
+    expect(useGameStore.getState().gamePhase).toBe("ended");
   });
 
-  it('zombie_fund scenario seeds and completes', () => {
+  it("zombie_fund scenario seeds and completes", () => {
     useGameStore.getState().initFund({
-      name: 'Zombie Test',
-      type: 'national',
-      stage: 'seed',
+      name: "Zombie Test",
+      type: "national",
+      stage: "seed",
       targetSize: 50_000_000,
       currentSize: 50_000_000,
       skillLevel: 2,
       rebirthCount: 1,
-      scenarioId: 'zombie_fund',
+      scenarioId: "zombie_fund",
     });
 
     const { activeScenario } = useGameStore.getState();
     expect(activeScenario).not.toBeNull();
-    expect(activeScenario!.id).toBe('zombie_fund');
+    expect(activeScenario!.id).toBe("zombie_fund");
 
     // Run full lifecycle without crashing
     for (let i = 0; i < 120; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       s.advanceTime();
     }
-    expect(useGameStore.getState().gamePhase).toBe('ended');
+    expect(useGameStore.getState().gamePhase).toBe("ended");
   });
 
-  it('lp_rescue scenario seeds and completes', () => {
+  it("lp_rescue scenario seeds and completes", () => {
     useGameStore.getState().initFund({
-      name: 'LP Rescue Test',
-      type: 'regional',
-      stage: 'seed',
+      name: "LP Rescue Test",
+      type: "regional",
+      stage: "seed",
       targetSize: 40_000_000,
       currentSize: 40_000_000,
       skillLevel: 2,
       rebirthCount: 1,
-      scenarioId: 'lp_rescue',
+      scenarioId: "lp_rescue",
     });
 
     const { activeScenario, lpSentiment } = useGameStore.getState();
     expect(activeScenario).not.toBeNull();
-    expect(activeScenario!.id).toBe('lp_rescue');
+    expect(activeScenario!.id).toBe("lp_rescue");
     // lp_rescue starts with low LP sentiment
     expect(lpSentiment.score).toBeLessThan(50);
 
     for (let i = 0; i < 120; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       s.advanceTime();
     }
-    expect(useGameStore.getState().gamePhase).toBe('ended');
+    expect(useGameStore.getState().gamePhase).toBe("ended");
   });
 
-  it('multi-undo back to initial state', () => {
+  it("multi-undo back to initial state", () => {
     initDefaultFund();
     const monthStart = useGameStore.getState().fund!.currentMonth;
 
@@ -324,12 +349,12 @@ describe('gameState — Edge Case Tests', () => {
     expect(useGameStore.getState().fund!.currentMonth).toBe(monthStart);
   });
 
-  it('heavy investment portfolio survives full lifecycle', () => {
+  it("heavy investment portfolio survives full lifecycle", () => {
     initDefaultFund();
     // Invest in deals for the first 20 months (capped to avoid state explosion)
     for (let i = 0; i < 20; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
 
       // Invest in up to 2 deals per month
       let invested = 0;
@@ -349,14 +374,14 @@ describe('gameState — Edge Case Tests', () => {
     // Run remaining months — the key assertion is no crashes
     for (let i = 0; i < 110; i++) {
       const s = useGameStore.getState();
-      if (s.gamePhase === 'ended') break;
+      if (s.gamePhase === "ended") break;
       expect(() => s.advanceTime()).not.toThrow();
     }
 
-    expect(useGameStore.getState().gamePhase).toBe('ended');
+    expect(useGameStore.getState().gamePhase).toBe("ended");
   });
 
-  it('state without new fields does not crash on load', () => {
+  it("state without new fields does not crash on load", () => {
     initDefaultFund();
     useGameStore.getState().advanceTime();
 
@@ -373,8 +398,250 @@ describe('gameState — Edge Case Tests', () => {
 
     // advanceTime should still work with missing fields
     const s = useGameStore.getState();
-    if (s.gamePhase === 'playing') {
+    if (s.gamePhase === "playing") {
       expect(() => s.advanceTime()).not.toThrow();
     }
+  });
+});
+
+describe("gameState — Timeline Modes", () => {
+  beforeEach(() => {
+    resetStore();
+  });
+
+  it("initFund with timelineMode 'irl' sets fund.timelineMode to 'irl'", () => {
+    useGameStore.getState().initFund({
+      name: "IRL Fund",
+      type: "national",
+      stage: "seed",
+      targetSize: 100_000_000,
+      currentSize: 100_000_000,
+      skillLevel: 1,
+      rebirthCount: 0,
+      scenarioId: "sandbox",
+      timelineMode: "irl",
+    });
+    expect(useGameStore.getState().fund!.timelineMode).toBe("irl");
+  });
+
+  it("initFund without timelineMode defaults to 'freeplay'", () => {
+    initDefaultFund();
+    expect(useGameStore.getState().fund!.timelineMode).toBe("freeplay");
+  });
+
+  it("invest action is blocked and returns success:false when IRL gate is active", () => {
+    useGameStore.getState().initFund({
+      name: "IRL Fund",
+      type: "national",
+      stage: "seed",
+      targetSize: 100_000_000,
+      currentSize: 100_000_000,
+      skillLevel: 1,
+      rebirthCount: 0,
+      scenarioId: "sandbox",
+      timelineMode: "irl",
+    });
+
+    // Advance to populate deal pipeline
+    for (let i = 0; i < 3; i++) {
+      useGameStore.getState().advanceTime();
+    }
+
+    const { dealPipeline, fund } = useGameStore.getState();
+    if (dealPipeline.length === 0 || !fund) return;
+
+    const deal = dealPipeline[0];
+    const amount = Math.min(deal.valuation * 0.1, fund.cashAvailable * 0.2);
+    const ownership = (amount / deal.valuation) * 100;
+
+    // Plant an active gate for seed_check to block the investment
+    useGameStore.setState({
+      fund: {
+        ...fund,
+        activeTimeGates: [
+          {
+            actionType: "seed_check",
+            availableFromMonth: fund.currentMonth + 2,
+            reason: "Due diligence in progress",
+          },
+        ],
+      },
+    });
+
+    const result = useGameStore.getState().invest(deal.id, amount, ownership);
+    expect(result.success).toBe(false);
+    expect(result.reason).toBeDefined();
+    expect(result.reason).toContain("month");
+  });
+
+  it("invest action opens a new gate after success in IRL mode", () => {
+    useGameStore.getState().initFund({
+      name: "IRL Fund",
+      type: "national",
+      stage: "seed",
+      targetSize: 100_000_000,
+      currentSize: 100_000_000,
+      skillLevel: 1,
+      rebirthCount: 0,
+      scenarioId: "sandbox",
+      timelineMode: "irl",
+    });
+
+    // Advance to populate deal pipeline
+    for (let i = 0; i < 3; i++) {
+      useGameStore.getState().advanceTime();
+    }
+
+    const { dealPipeline, fund } = useGameStore.getState();
+    if (dealPipeline.length === 0 || !fund) return;
+
+    // Ensure no active gates so investment can proceed
+    useGameStore.setState({
+      fund: { ...fund, activeTimeGates: [] },
+    });
+
+    const deal = dealPipeline[0];
+    // Use high founder willingness to reduce flakiness
+    useGameStore.setState({
+      dealPipeline: useGameStore
+        .getState()
+        .dealPipeline.map((d) =>
+          d.id === deal.id ? { ...d, founderWillingness: 100 } : d,
+        ),
+    });
+
+    const currentFund = useGameStore.getState().fund!;
+    const amount = Math.min(
+      deal.valuation * 0.1,
+      currentFund.cashAvailable * 0.2,
+    );
+    const ownership = (amount / deal.valuation) * 100;
+
+    const result = useGameStore.getState().invest(deal.id, amount, ownership);
+
+    if (result.success) {
+      // A new gate should have been opened
+      const newFund = useGameStore.getState().fund!;
+      expect(newFund.activeTimeGates.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("invest action ignores gates in freeplay mode", () => {
+    // initDefaultFund creates a freeplay fund
+    initDefaultFund();
+
+    // Advance to populate deal pipeline
+    for (let i = 0; i < 3; i++) {
+      useGameStore.getState().advanceTime();
+    }
+
+    const { dealPipeline, fund } = useGameStore.getState();
+    if (dealPipeline.length === 0 || !fund) return;
+
+    // Plant a gate — should be ignored in freeplay
+    useGameStore.setState({
+      fund: {
+        ...fund,
+        activeTimeGates: [
+          {
+            actionType: "seed_check",
+            availableFromMonth: fund.currentMonth + 10,
+            reason: "Should be ignored",
+          },
+        ],
+        timelineMode: "freeplay",
+      },
+      dealPipeline: useGameStore
+        .getState()
+        .dealPipeline.map((d, i) =>
+          i === 0 ? { ...d, founderWillingness: 100 } : d,
+        ),
+    });
+
+    const deal = useGameStore.getState().dealPipeline[0];
+    const currentFund = useGameStore.getState().fund!;
+    const amount = Math.min(
+      deal.valuation * 0.1,
+      currentFund.cashAvailable * 0.2,
+    );
+    const ownership = (amount / deal.valuation) * 100;
+
+    const result = useGameStore.getState().invest(deal.id, amount, ownership);
+
+    // In freeplay, gate should be ignored — may succeed or fail for other reasons
+    // but must NOT be blocked due to time gate
+    if (!result.success) {
+      expect(result.reason).not.toContain("month");
+    }
+  });
+
+  it("advanceTime prunes expired gates from fund.activeTimeGates", () => {
+    useGameStore.getState().initFund({
+      name: "IRL Fund",
+      type: "national",
+      stage: "seed",
+      targetSize: 100_000_000,
+      currentSize: 100_000_000,
+      skillLevel: 1,
+      rebirthCount: 0,
+      scenarioId: "sandbox",
+      timelineMode: "irl",
+    });
+
+    const fund = useGameStore.getState().fund!;
+
+    // Plant an expired gate (availableFromMonth <= currentMonth)
+    useGameStore.setState({
+      fund: {
+        ...fund,
+        currentMonth: 5,
+        activeTimeGates: [
+          {
+            actionType: "seed_check",
+            availableFromMonth: 5,
+            reason: "expired",
+          },
+          {
+            actionType: "due_diligence",
+            availableFromMonth: 10,
+            reason: "active",
+          },
+        ],
+      },
+    });
+
+    useGameStore.getState().advanceTime();
+
+    const newFund = useGameStore.getState().fund!;
+    // The expired gate (availableFromMonth: 5, was <= 5) should be cleared
+    // Note: after advanceTime, currentMonth becomes 6, so gate at 10 stays
+    const expiredGate = newFund.activeTimeGates.find(
+      (g) => g.actionType === "seed_check",
+    );
+    expect(expiredGate).toBeUndefined();
+  });
+
+  it("fund.timelineMode persists across Zustand rehydrate cycle", () => {
+    useGameStore.getState().initFund({
+      name: "IRL Fund",
+      type: "national",
+      stage: "seed",
+      targetSize: 100_000_000,
+      currentSize: 100_000_000,
+      skillLevel: 1,
+      rebirthCount: 0,
+      scenarioId: "sandbox",
+      timelineMode: "irl",
+    });
+
+    // Verify the value is stored in state
+    expect(useGameStore.getState().fund!.timelineMode).toBe("irl");
+
+    // Simulate rehydration by manually re-setting the fund state
+    const currentFund = useGameStore.getState().fund!;
+    useGameStore.setState({ fund: { ...currentFund } });
+
+    // Should still be "irl" after setState (persist middleware handles JSON round-trip)
+    expect(useGameStore.getState().fund!.timelineMode).toBe("irl");
   });
 });

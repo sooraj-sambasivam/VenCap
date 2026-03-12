@@ -98,6 +98,12 @@ import {
   weightedRandom,
   getGameYear,
 } from "@/lib/utils";
+import {
+  checkTimeGate,
+  openTimeGate,
+  clearExpiredGates,
+} from "./timelineGates";
+import { t } from "@/lib/i18n";
 
 // ============================================================
 // INITIAL STATE
@@ -1177,6 +1183,11 @@ export const useGameStore = create<GameState>()(
         );
 
         fund.currentMonth++;
+
+        // ==== STEP 0.1: Clear expired time gates ====
+        // Guard for old saves that may not have this field
+        if (!fund.activeTimeGates) fund.activeTimeGates = [];
+        fund.activeTimeGates = clearExpiredGates(fund);
 
         // ==== STEP 0.25: Update Economic Snapshot ====
         const prevEconSnapshot = state.currentEconomicSnapshot;
@@ -2467,6 +2478,23 @@ export const useGameStore = create<GameState>()(
         if (!startup)
           return { success: false, reason: "Deal no longer available." };
 
+        // IRL timeline gate check — determine gate key by startup stage
+        // Checked before checkCanInvest: if you're in DD cooldown, deal can't proceed
+        const gateKey =
+          startup.stage === "pre_seed" || startup.stage === "seed"
+            ? "seed_check"
+            : "due_diligence";
+        const gate = checkTimeGate(state.fund, gateKey);
+        if (gate.blocked) {
+          return {
+            success: false,
+            reason: t(
+              "timeGate.blocked",
+              `Due diligence in progress — available in ${gate.monthsRemaining} month(s).`,
+            ),
+          };
+        }
+
         const check = checkCanInvest(state.fund, amount, startup.stage);
         if (!check.allowed) return { success: false, reason: check.reason };
 
@@ -2504,11 +2532,21 @@ export const useGameStore = create<GameState>()(
           region: startup.region ?? "silicon_valley",
         };
 
+        // Open a new time gate for the next investment (IRL mode only)
+        const newGate =
+          state.fund.timelineMode === "irl"
+            ? openTimeGate(state.fund, gateKey, "Due diligence queue")
+            : null;
+        const updatedTimeGates = newGate
+          ? [...state.fund.activeTimeGates, newGate]
+          : state.fund.activeTimeGates;
+
         set({
           fund: {
             ...state.fund,
             cashAvailable: state.fund.cashAvailable - amount,
             deployed: state.fund.deployed + amount,
+            activeTimeGates: updatedTimeGates,
           },
           portfolio: [...state.portfolio, portfolioCompany],
           dealPipeline: state.dealPipeline.filter((s) => s.id !== startupId),

@@ -56,11 +56,8 @@ describe("IRL_GATE_DURATIONS", () => {
   });
 
   it("all durations have min <= max", () => {
-    for (const [key, dur] of Object.entries(IRL_GATE_DURATIONS)) {
-      expect(dur.min).toBeLessThanOrEqual(
-        dur.max,
-        `${key}: min (${dur.min}) must be <= max (${dur.max})`,
-      );
+    for (const [_key, dur] of Object.entries(IRL_GATE_DURATIONS)) {
+      expect(dur.min).toBeLessThanOrEqual(dur.max);
     }
   });
 });
