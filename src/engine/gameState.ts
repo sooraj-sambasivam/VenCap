@@ -3582,11 +3582,49 @@ export const useGameStore = create<GameState>()(
       },
 
       // ============================================================
+      // LLM REPORT GENERATION
+      // ============================================================
+      generateReport: (request: import("./types").ReportRequest): string => {
+        const state = get();
+        if (!state.fund || state.gamePhase !== "playing") return "";
+
+        const reportId = uuid();
+        const result: import("./types").ReportGenerationResult = {
+          id: reportId,
+          type: request.type,
+          status: "generating",
+          content: "",
+          createdAt: Date.now(),
+        };
+
+        // Add to history immediately (UI will show spinner)
+        set({ reportHistory: [result, ...state.reportHistory] });
+
+        return reportId;
+      },
+
+      cancelReport: (reportId: string) => {
+        const state = get();
+        set({
+          reportHistory: state.reportHistory.map((r) =>
+            r.id === reportId && r.status !== "complete"
+              ? { ...r, status: "error" as const, error: "Cancelled" }
+              : r,
+          ),
+        });
+      },
+
+      clearReportHistory: () => {
+        set({ reportHistory: [] });
+      },
+
+      // ============================================================
       // SAVE / LOAD SLOTS
       // ============================================================
       saveToSlot: (slotId: string, name: string) => {
         const state = get();
         // Exclude actions and history from the saved blob
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { history: _h, ...data } = state;
         // Strip function-valued keys (actions) before serialization
         const serializable: Record<string, unknown> = {};
@@ -3613,6 +3651,7 @@ export const useGameStore = create<GameState>()(
       name: "vencap-game-state",
       partialize: (state) => {
         // Exclude history (undo stack) from localStorage — Feature 7
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { history: _history, ...rest } = state;
         return rest as typeof state;
       },

@@ -791,6 +791,10 @@ export interface GameStateActions {
     reason?: string;
   };
   completeFundClose: () => { success: boolean; reason?: string };
+  // v4.0: LLM Report Generation
+  generateReport: (request: ReportRequest) => string; // returns report ID
+  cancelReport: (reportId: string) => void;
+  clearReportHistory: () => void;
 }
 
 // Feature 7: Undo snapshot — auto-derives from GameState, excludes actions + transient fields
