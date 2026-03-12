@@ -47,7 +47,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. `@vercel/speed-insights/react` is installed and rendered inside `App.tsx` — performance data flows to Vercel dashboard on deploy
 2. A `t()` function exists in `src/lib/` and all new user-facing strings in subsequent phases use it (no raw string literals in JSX)
 3. Build passes `tsc -b` with the new additions; bundle delta is under 15 KB
-   **Plans**: TBD
+   **Plans:** 1 plan
+
+Plans:
+
+- [ ] 02-01-PLAN.md — i18n shim + Vercel Speed Insights
 
 ### Phase 3: Timeline Modes
 
@@ -141,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase                    | Plans Complete | Status      | Completed |
 | ------------------------ | -------------- | ----------- | --------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -         |
-| 2. Infrastructure Setup  | 0/TBD          | Not started | -         |
+| 2. Infrastructure Setup  | 0/1            | Not started | -         |
 | 3. Timeline Modes        | 0/TBD          | Not started | -         |
 | 4. Fundraising Flow      | 0/TBD          | Not started | -         |
 | 5. VC Skills System      | 0/TBD          | Not started | -         |
