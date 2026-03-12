@@ -14,7 +14,7 @@ VenCap v4.0 adds five interdependent feature systems to a complete VC fund simul
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Types Foundation** - Add all new types to types.ts in one batch and fix GameSnapshot aliasing
-- [ ] **Phase 2: Infrastructure Setup** - Install Speed Insights and wire i18n shim so all subsequent UI is ready
+- [x] **Phase 2: Infrastructure Setup** - Install Speed Insights and wire i18n shim so all subsequent UI is ready (completed 2026-03-12)
 - [ ] **Phase 3: Timeline Modes** - IRL vs Freeplay toggle at fund start with realistic gate calibration throughout
 - [ ] **Phase 4: Fundraising Flow** - LP pitching, commitment tracking, closing mechanics, and Fund II/III unlock
 - [ ] **Phase 5: VC Skills System** - 19-skill tracking engine, career title progression, and dedicated skills page
@@ -47,7 +47,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 1. `@vercel/speed-insights/react` is installed and rendered inside `App.tsx` — performance data flows to Vercel dashboard on deploy
 2. A `t()` function exists in `src/lib/` and all new user-facing strings in subsequent phases use it (no raw string literals in JSX)
 3. Build passes `tsc -b` with the new additions; bundle delta is under 15 KB
-   **Plans:** 1 plan
+   **Plans:** 1/1 plans complete
 
 Plans:
 
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase                    | Plans Complete | Status      | Completed |
 | ------------------------ | -------------- | ----------- | --------- |
 | 1. Types Foundation      | 0/TBD          | Not started | -         |
-| 2. Infrastructure Setup  | 0/1            | Not started | -         |
+| 2. Infrastructure Setup  | 1/1 | Complete   | 2026-03-12 |
 | 3. Timeline Modes        | 0/TBD          | Not started | -         |
 | 4. Fundraising Flow      | 0/TBD          | Not started | -         |
 | 5. VC Skills System      | 0/TBD          | Not started | -         |

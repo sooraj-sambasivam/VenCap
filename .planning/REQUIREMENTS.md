@@ -11,8 +11,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **FOUND-01**: All new types added to `src/engine/types.ts` in a single batch (types-first pattern)
 - [ ] **FOUND-02**: `GameSnapshot` refactored to `Omit<GameState, ...>` alias to prevent undo bugs on new fields
-- [ ] **FOUND-03**: i18n shim (`t()` function) wrapping all new user-facing strings
-- [ ] **FOUND-04**: Vercel Speed Insights integrated via `@vercel/speed-insights/react` in App.tsx
+- [x] **FOUND-03**: i18n shim (`t()` function) wrapping all new user-facing strings
+- [x] **FOUND-04**: Vercel Speed Insights integrated via `@vercel/speed-insights/react` in App.tsx
 
 ### Timeline Modes
 
@@ -117,8 +117,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ----------- | ------- | ------- |
 | FOUND-01    | Phase 1 | Pending |
 | FOUND-02    | Phase 1 | Pending |
-| FOUND-03    | Phase 2 | Pending |
-| FOUND-04    | Phase 2 | Pending |
+| FOUND-03    | Phase 2 | Complete |
+| FOUND-04    | Phase 2 | Complete |
 | TIME-01     | Phase 3 | Pending |
 | TIME-02     | Phase 3 | Pending |
 | TIME-03     | Phase 3 | Pending |

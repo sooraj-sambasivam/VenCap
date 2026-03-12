@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 1 executed — types committed
-last_updated: "2026-03-12T07:34:33.542Z"
+stopped_at: Completed 02-01-PLAN.md — i18n shim and SpeedInsights
+last_updated: "2026-03-12T07:53:23.644Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
   percent: 0
 ---
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 _Updated after each plan completion_
+| Phase 02-infrastructure-setup P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - Skills in Zustand with partialize inclusion, explicitly excluded from GameSnapshot
 - Fund II/III TVPI unlock thresholds: to be set as constants in fundraising.ts (validate against ~2x net median top-quartile)
 - Skills XP curve (action-to-skill mapping): design surface to produce during Phase 5 planning
+- [Phase 02-infrastructure-setup]: i18n shim is a v1 passthrough (returns fallback ?? key) — no react-i18next needed yet; v2 replaces when multi-locale support required
+- [Phase 02-infrastructure-setup]: SpeedInsights placed inside BrowserRouter after Toaster with no props — defaults auto-detect environment and are no-op in local dev
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T07:34:33.539Z
-Stopped at: Phase 1 executed — types committed
-Resume file: src/engine/types.ts
+Last session: 2026-03-12T07:53:23.642Z
+Stopped at: Completed 02-01-PLAN.md — i18n shim and SpeedInsights
+Resume file: None
