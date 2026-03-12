@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: milestone
 status: planning
 stopped_at: Completed 02-01-PLAN.md — i18n shim and SpeedInsights
-last_updated: "2026-03-12T07:53:23.644Z"
+last_updated: "2026-03-12T07:55:57.087Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
