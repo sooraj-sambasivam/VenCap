@@ -115,6 +115,15 @@ None — TypeScript was clean on first run, all 45 tests green immediately after
 - `calculatePitchOutcome` returns `{ newStatus, message }` — store action can update `activeCampaign.prospects[i].status` and surface the message as a toast
 - `canStartNextFund` is ready to gate the "Start Fund II" UI action
 
+## Self-Check: PASSED
+
+- FOUND: src/engine/fundraising.ts
+- FOUND: src/engine/fundraising.test.ts
+- FOUND: .planning/phases/04-fundraising-flow/04-01-SUMMARY.md
+- FOUND: d5a8cc9 (RED commit)
+- FOUND: 4f51ec5 (GREEN commit)
+- FOUND: 3f6e1ed (fix commit)
+
 ---
 
 _Phase: 04-fundraising-flow_
