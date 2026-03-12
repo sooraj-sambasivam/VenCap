@@ -113,17 +113,59 @@ Deferred to future release. Tracked but not in current roadmap.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement                  | Phase | Status |
-| ---------------------------- | ----- | ------ |
-| (To be filled by roadmapper) |       |        |
+| Requirement | Phase   | Status  |
+| ----------- | ------- | ------- |
+| FOUND-01    | Phase 1 | Pending |
+| FOUND-02    | Phase 1 | Pending |
+| FOUND-03    | Phase 2 | Pending |
+| FOUND-04    | Phase 2 | Pending |
+| TIME-01     | Phase 3 | Pending |
+| TIME-02     | Phase 3 | Pending |
+| TIME-03     | Phase 3 | Pending |
+| TIME-04     | Phase 3 | Pending |
+| TIME-05     | Phase 3 | Pending |
+| FUND-01     | Phase 4 | Pending |
+| FUND-02     | Phase 4 | Pending |
+| FUND-03     | Phase 4 | Pending |
+| FUND-04     | Phase 4 | Pending |
+| FUND-05     | Phase 4 | Pending |
+| FUND-06     | Phase 4 | Pending |
+| FUND-07     | Phase 4 | Pending |
+| SKIL-01     | Phase 5 | Pending |
+| SKIL-02     | Phase 5 | Pending |
+| SKIL-03     | Phase 5 | Pending |
+| SKIL-04     | Phase 5 | Pending |
+| SKIL-05     | Phase 5 | Pending |
+| SKIL-06     | Phase 5 | Pending |
+| SKIL-07     | Phase 5 | Pending |
+| SKIL-08     | Phase 5 | Pending |
+| FEED-01     | Phase 6 | Pending |
+| FEED-02     | Phase 6 | Pending |
+| FEED-03     | Phase 6 | Pending |
+| FEED-04     | Phase 6 | Pending |
+| FEED-05     | Phase 6 | Pending |
+| FEED-06     | Phase 6 | Pending |
+| REPT-01     | Phase 7 | Pending |
+| REPT-02     | Phase 7 | Pending |
+| REPT-03     | Phase 7 | Pending |
+| REPT-04     | Phase 7 | Pending |
+| REPT-05     | Phase 7 | Pending |
+| REPT-06     | Phase 7 | Pending |
+| REPT-07     | Phase 7 | Pending |
+| REPT-08     | Phase 7 | Pending |
+| REPT-09     | Phase 7 | Pending |
+| QUAL-01     | Phase 8 | Pending |
+| QUAL-02     | Phase 8 | Pending |
+| QUAL-03     | Phase 8 | Pending |
+| QUAL-04     | Phase 8 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 38 total
-- Mapped to phases: 0
-- Unmapped: 38 ⚠️
+- v1 requirements: 43 total
+- Mapped to phases: 43
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-12_
-_Last updated: 2026-03-12 after initial definition_
+_Last updated: 2026-03-12 after roadmap creation — all 43 requirements mapped_
