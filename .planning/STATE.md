@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 03-02-PLAN.md — timeline modes UI (wizard, dashboard badge, deal gates)
-last_updated: "2026-03-12T08:47:59.310Z"
+stopped_at: Completed 04-01-PLAN.md — fundraising engine module (generateLPProspects, calculatePitchOutcome, canStartNextFund)
+last_updated: "2026-03-12T09:10:07.067Z"
 last_activity: 2026-03-12 — Roadmap created, phases derived from 43 v1 requirements
 progress:
   total_phases: 8
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ _Updated after each plan completion_
 | Phase 02-infrastructure-setup P01 | 2 | 2 tasks | 5 files |
 | Phase 03-timeline-modes P01 | 8 | 2 tasks | 4 files |
 | Phase 03-timeline-modes P02 | 12 | 2 tasks | 5 files |
+| Phase 04-fundraising-flow P01 | 4 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 03-timeline-modes]: IRL gate check placed before checkCanInvest — DD cooldown blocks regardless of check size, prevents wrong reason masking gate message
 - [Phase 03-timeline-modes]: Gate display via optional gateMessage prop in DealCard — parent computes gate, passes string down, leaf stays pure and fund-unaware
 - [Phase 03-timeline-modes]: IRL Pacing badge placed as standalone element after scenario banner — avoids coupling two independent display concerns
+- [Phase 04-fundraising-flow]: FUND_II_TVPI_THRESHOLD=2.0, FUND_III_TVPI_THRESHOLD=2.5 set as named constants in fundraising.ts — resolves Phase 4 blocker
+- [Phase 04-fundraising-flow]: Pitch probability: baseProbability(0.6/0.5/0.4/0.7) * interestFactor * relationshipFactor * commitmentMod(lp/50 clamped 0.7-1.3) * marketMod
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-12T08:42:29.766Z
-Stopped at: Completed 03-02-PLAN.md — timeline modes UI (wizard, dashboard badge, deal gates)
+Last session: 2026-03-12T09:10:07.065Z
+Stopped at: Completed 04-01-PLAN.md — fundraising engine module (generateLPProspects, calculatePitchOutcome, canStartNextFund)
 Resume file: None
