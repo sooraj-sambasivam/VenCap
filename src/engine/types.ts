@@ -772,6 +772,25 @@ export interface GameStateActions {
   fetchLiveMarketData: () => Promise<void>;
   saveToSlot: (slotId: string, name: string) => void;
   loadFromSlot: (slotId: string) => boolean;
+  // v4.0: Fundraising flow actions
+  launchCampaign: (terms?: FundTermsConfig) => {
+    success: boolean;
+    reason?: string;
+  };
+  pitchLP: (prospectId: string) => {
+    success: boolean;
+    reason?: string;
+    newStatus?: LPCommitmentStatus;
+  };
+  advanceFundClose: () => {
+    newCloseStatus: FundCloseStatus;
+    committed: number;
+  };
+  configureFundTerms: (terms: Partial<FundTermsConfig>) => {
+    success: boolean;
+    reason?: string;
+  };
+  completeFundClose: () => { success: boolean; reason?: string };
 }
 
 // Feature 7: Undo snapshot — auto-derives from GameState, excludes actions + transient fields

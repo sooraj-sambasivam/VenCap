@@ -104,6 +104,15 @@ import {
   clearExpiredGates,
 } from "./timelineGates";
 import { t } from "@/lib/i18n";
+import {
+  generateLPProspects,
+  calculatePitchOutcome,
+  calculateTotalCommitted,
+  getFirstCloseThreshold,
+  getFinalCloseThreshold,
+  DEFAULT_FUND_TERMS,
+} from "./fundraising";
+import type { FundTermsConfig } from "./types";
 
 // ============================================================
 // INITIAL STATE
@@ -3248,6 +3257,256 @@ export const useGameStore = create<GameState>()(
           tutorialMode: false,
           tutorialStep: 0,
         });
+      },
+
+      // ============================================================
+      // FUNDRAISING FLOW ACTIONS (v4.0)
+      // ============================================================
+
+      launchCampaign: (terms?: FundTermsConfig) => {
+        const state = get();
+        if (!state.fund || state.gamePhase !== "playing") {
+          return { success: false, reason: "No active fund in playing state." };
+        }
+        if (state.activeCampaign !== null) {
+          return {
+            success: false,
+            reason: "A fundraising campaign is already active.",
+          };
+        }
+
+        const fund = state.fund;
+        const prospects = generateLPProspects(
+          fund.fundNumber ?? 1,
+          fund.targetSize,
+          state.lpSentiment.score,
+        );
+
+        const campaign: import("./types").FundraisingCampaign = {
+          id: uuid(),
+          fundNumber: fund.fundNumber ?? 1,
+          prospects,
+          closeStatus: "pre_marketing",
+          targetAmount: fund.targetSize,
+          committedAmount: 0,
+          calledAmount: 0,
+          terms: terms ?? { ...DEFAULT_FUND_TERMS },
+          launchedMonth: fund.currentMonth,
+        };
+
+        set({ activeCampaign: campaign });
+        return { success: true };
+      },
+
+      pitchLP: (prospectId: string) => {
+        const state = get();
+        if (!state.activeCampaign) {
+          return { success: false, reason: "No active fundraising campaign." };
+        }
+
+        const prospectIndex = state.activeCampaign.prospects.findIndex(
+          (p) => p.id === prospectId,
+        );
+        if (prospectIndex === -1) {
+          return { success: false, reason: "Prospect not found in campaign." };
+        }
+
+        const prospect = state.activeCampaign.prospects[prospectIndex];
+        const outcome = calculatePitchOutcome(
+          prospect,
+          state.lpSentiment.score,
+          state.marketCycle,
+        );
+
+        const updatedProspects = state.activeCampaign.prospects.map((p, i) =>
+          i === prospectIndex ? { ...p, status: outcome.newStatus } : p,
+        );
+
+        const newCommitted = calculateTotalCommitted(updatedProspects);
+        const advanced = outcome.newStatus !== prospect.status;
+
+        set({
+          activeCampaign: {
+            ...state.activeCampaign,
+            prospects: updatedProspects,
+            committedAmount: newCommitted,
+          },
+          news: advanced
+            ? [
+                ...state.news,
+                {
+                  id: uuid(),
+                  headline: `LP Pitch: ${prospect.name}`,
+                  summary: outcome.message,
+                  type: "market_trend" as const,
+                  sentiment: "positive" as const,
+                  month: state.fund?.currentMonth ?? 0,
+                },
+              ]
+            : state.news,
+        });
+
+        return {
+          success: advanced,
+          reason: advanced ? undefined : outcome.message,
+          newStatus: outcome.newStatus,
+        };
+      },
+
+      advanceFundClose: () => {
+        const state = get();
+        if (!state.activeCampaign) {
+          return {
+            newCloseStatus:
+              "pre_marketing" as import("./types").FundCloseStatus,
+            committed: 0,
+          };
+        }
+
+        const campaign = state.activeCampaign;
+        const committed = campaign.committedAmount;
+        const current = campaign.closeStatus;
+
+        // Determine target close status — only advance forward, never backward
+        const STATUS_ORDER: import("./types").FundCloseStatus[] = [
+          "pre_marketing",
+          "first_close",
+          "interim_close",
+          "final_close",
+        ];
+
+        let newStatus = current;
+
+        if (
+          committed >= getFinalCloseThreshold(campaign.targetAmount) &&
+          STATUS_ORDER.indexOf(current) < STATUS_ORDER.indexOf("final_close")
+        ) {
+          newStatus = "final_close";
+        } else if (
+          committed >= getFirstCloseThreshold(campaign.targetAmount) &&
+          STATUS_ORDER.indexOf(current) < STATUS_ORDER.indexOf("first_close")
+        ) {
+          newStatus = "first_close";
+        }
+
+        if (newStatus !== current) {
+          set({
+            activeCampaign: { ...campaign, closeStatus: newStatus },
+          });
+        }
+
+        return { newCloseStatus: newStatus, committed };
+      },
+
+      configureFundTerms: (terms: Partial<FundTermsConfig>) => {
+        const state = get();
+        if (!state.activeCampaign) {
+          return { success: false, reason: "No active fundraising campaign." };
+        }
+        if (state.activeCampaign.closeStatus === "final_close") {
+          return {
+            success: false,
+            reason: "Cannot change terms after final close.",
+          };
+        }
+        if (!state.fund) {
+          return { success: false, reason: "No active fund." };
+        }
+
+        const newTerms = { ...state.activeCampaign.terms, ...terms };
+
+        // Pitfall 3: update BOTH activeCampaign.terms AND fund economics atomically
+        set({
+          activeCampaign: {
+            ...state.activeCampaign,
+            terms: newTerms,
+          },
+          fund: {
+            ...state.fund,
+            managementFeeRate:
+              terms.managementFee !== undefined
+                ? terms.managementFee
+                : state.fund.managementFeeRate,
+            carryRate:
+              terms.carry !== undefined ? terms.carry : state.fund.carryRate,
+            hurdleRate:
+              terms.hurdleRate !== undefined
+                ? terms.hurdleRate
+                : state.fund.hurdleRate,
+            gpCommit:
+              terms.gpCommitPercent !== undefined
+                ? Math.round(state.fund.currentSize * terms.gpCommitPercent)
+                : state.fund.gpCommit,
+          },
+        });
+
+        return { success: true };
+      },
+
+      completeFundClose: () => {
+        const state = get();
+        if (!state.fund || state.gamePhase !== "playing") {
+          return { success: false, reason: "No active fund in playing state." };
+        }
+
+        // Terminal action: push snapshot before reset, then clear history
+        const snapshot = captureSnapshot(state);
+        const playerProfile = state.playerProfile;
+        const fundNumber = (state.fund.fundNumber ?? 1) + 1;
+        const skillLevel = state.fund.skillLevel + 1;
+        const rebirthCount = state.fund.rebirthCount + 1;
+
+        set({
+          // Push snapshot to history first (for reference), then immediately clear
+          history: [snapshot],
+          fund: null,
+          gamePhase: "setup",
+          portfolio: [],
+          dealPipeline: [],
+          activeCampaign: null,
+          lpSentiment: {
+            ...initialLPSentiment,
+            score: Math.min(70, 50 + rebirthCount * 5),
+          },
+          lpReports: [],
+          incubatorBatches: [],
+          activeIncubator: null,
+          labProjects: [],
+          talentPool: [],
+          news: [],
+          pendingDecisions: [],
+          secondaryOffers: [],
+          buyoutOffers: [],
+          fundraisingEvents: [],
+          followOnOpportunities: [],
+          monthlySnapshots: [],
+          dealsReviewed: 0,
+          dealsPassed: 0,
+          boardMeetings: [],
+          activeScenario: null,
+          decisionHistory: [],
+          scenarioWon: null,
+          unlockedAchievements: state.unlockedAchievements || [],
+          syndicatePartners: [],
+          tutorialMode: false,
+          tutorialStep: 0,
+          // Preserve playerProfile — skills and career progression carry over
+          playerProfile,
+        });
+
+        // Clear history — completeFundClose is terminal, not undoable
+        set({ history: [] });
+
+        // Store next fund context so setup page can pre-fill
+        set({
+          fund: {
+            skillLevel,
+            rebirthCount,
+            fundNumber,
+          } as unknown as import("./types").Fund,
+        });
+
+        return { success: true };
       },
 
       // ============================================================
