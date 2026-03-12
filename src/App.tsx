@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/engine/auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,43 +42,45 @@ function PageLoader() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <TooltipProvider>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg"
-        >
-          Skip to main content
-        </a>
-        <NavBar />
-        <main
-          id="main-content"
-          className="min-h-screen bg-background pt-14 text-foreground"
-        >
-          <ErrorBoundary>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/deals" element={<Deals />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/incubator" element={<Incubator />} />
-                <Route path="/lab" element={<Lab />} />
-                <Route path="/news" element={<News />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/results" element={<Results />} />
-                <Route path="/fundraising" element={<Fundraising />} />
-                <Route path="/skills" element={<Skills />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </ErrorBoundary>
-        </main>
-        <KeyboardShortcuts />
-        <Toaster />
-        <SpeedInsights />
-      </TooltipProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <TooltipProvider>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg"
+          >
+            Skip to main content
+          </a>
+          <NavBar />
+          <main
+            id="main-content"
+            className="min-h-screen bg-background pt-14 text-foreground"
+          >
+            <ErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/deals" element={<Deals />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/incubator" element={<Incubator />} />
+                  <Route path="/lab" element={<Lab />} />
+                  <Route path="/news" element={<News />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/results" element={<Results />} />
+                  <Route path="/fundraising" element={<Fundraising />} />
+                  <Route path="/skills" element={<Skills />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
+          </main>
+          <KeyboardShortcuts />
+          <Toaster />
+          <SpeedInsights />
+        </TooltipProvider>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

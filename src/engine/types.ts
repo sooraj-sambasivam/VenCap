@@ -973,3 +973,48 @@ export interface LeaderboardEntry {
   completedAt: number;
   durationMonths: number;
 }
+
+// ============================================================
+// SUPABASE / CLOUD TYPES
+// ============================================================
+
+export interface Profile {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  total_games: number;
+  best_score: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CloudSave {
+  id: string;
+  user_id: string;
+  name: string;
+  fund_name: string;
+  month: number;
+  tvpi_gross: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CloudLeaderboardEntry {
+  id: string;
+  user_id: string;
+  fund_name: string;
+  final_score: number;
+  grade: string;
+  tvpi_net: number;
+  irr_net: number;
+  total_exits: number;
+  unicorn_count: number;
+  scenario_id: string | null;
+  scenario_won: boolean | null;
+  difficulty: string;
+  rebirth_count: number;
+  duration_months: number;
+  completed_at: string;
+  // Joined from profiles
+  profiles?: { username: string | null };
+}

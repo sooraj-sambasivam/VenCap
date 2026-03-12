@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Save } from "lucide-react";
+import { Menu, X, Save, LogIn, LogOut, User } from "lucide-react";
 import { useGameStore } from "@/engine/gameState";
+import { useAuth } from "@/engine/auth";
 import { getMonthName, getGameYear } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import SaveLoadDialog from "@/components/SaveLoadDialog";
+import { AuthDialog } from "@/components/AuthDialog";
 
 const NAV_LINKS: readonly { to: string; label: string; tourId?: string }[] = [
   { to: "/dashboard", label: "Dashboard" },
@@ -23,9 +25,11 @@ const NAV_LINKS: readonly { to: string; label: string; tourId?: string }[] = [
 export default function NavBar() {
   const [open, setOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const location = useLocation();
   const fund = useGameStore((s) => s.fund);
   const gamePhase = useGameStore((s) => s.gamePhase);
+  const { user, signOut } = useAuth();
 
   const showLinks = gamePhase !== "setup";
 
@@ -96,6 +100,35 @@ export default function NavBar() {
           <span className="sr-only">Save / Load Game</span>
         </Button>
 
+        {/* Auth button */}
+        {user ? (
+          <div className="hidden items-center gap-1 sm:flex">
+            <span className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground">
+              <User className="size-3.5" />
+              {user.email?.split("@")[0]}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => signOut()}
+              title="Sign Out"
+            >
+              <LogOut className="size-4" />
+              <span className="sr-only">Sign Out</span>
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAuthOpen(true)}
+            className="hidden sm:flex"
+          >
+            <LogIn className="mr-1.5 size-4" />
+            Sign In
+          </Button>
+        )}
+
         {/* Mobile hamburger menu */}
         {showLinks && (
           <div className="md:hidden">
@@ -159,6 +192,7 @@ export default function NavBar() {
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
       />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} />
     </>
   );
 }

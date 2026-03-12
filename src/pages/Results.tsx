@@ -38,8 +38,11 @@ import {
   addToLeaderboard,
   clearLeaderboard,
   isTopThreeScore,
+  getCloudLeaderboard,
+  submitToCloudLeaderboard,
 } from "@/engine/leaderboard";
-import type { LeaderboardEntry } from "@/engine/types";
+import { useAuth } from "@/engine/auth";
+import type { CloudLeaderboardEntry, LeaderboardEntry } from "@/engine/types";
 
 const LazyWaterfallChart = lazy(() =>
   import("@/components/Charts").then((m) => ({ default: m.WaterfallChart })),
@@ -159,12 +162,25 @@ export default function Results() {
     scenarioWon,
     unlockedAchievements,
   } = useGameStore();
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [showRebirthConfirm, setShowRebirthConfirm] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [cloudLeaderboard, setCloudLeaderboard] = useState<
+    CloudLeaderboardEntry[]
+  >([]);
+  const [leaderboardTab, setLeaderboardTab] = useState<"local" | "global">(
+    user ? "global" : "local",
+  );
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // Load leaderboard on mount
+  useEffect(() => {
+    setLeaderboard(getLeaderboard());
+    getCloudLeaderboard().then(setCloudLeaderboard);
+  }, []);
 
   // Redirect if game has not ended
   useEffect(() => {
@@ -217,7 +233,8 @@ export default function Results() {
     scenarioWon && activeScenario ? activeScenario.bonusScoreMultiplier : 1.0;
   const finalScore = Math.round(baseScore * scenarioMultiplier);
 
-  // Auto-submit to leaderboard
+  // Auto-submit to leaderboard (after early return guard — fund is guaranteed here)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (scoreSubmitted || !fund) return;
     const entryId = `${fund.name}-${Date.now()}`;
@@ -242,13 +259,28 @@ export default function Results() {
     setLeaderboard(getLeaderboard());
     setIsNewHighScore(isTop3);
     setScoreSubmitted(true);
+
+    // Also submit to cloud if authenticated
+    if (user) {
+      submitToCloudLeaderboard(user.id, {
+        fund_name: fund.name,
+        final_score: finalScore,
+        grade,
+        tvpi_net: netTvpi,
+        irr_net: netIrr,
+        total_exits: exitedCompaniesAll.length,
+        unicorn_count: unicornCount,
+        scenario_id: activeScenario?.id ?? null,
+        scenario_won: scenarioWon ?? null,
+        difficulty: activeScenario?.difficulty ?? "normal",
+        rebirth_count: fund.rebirthCount ?? 0,
+        duration_months: fund.currentMonth,
+      }).then(() => {
+        getCloudLeaderboard().then(setCloudLeaderboard);
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoreSubmitted]);
-
-  // Load leaderboard on mount
-  useEffect(() => {
-    setLeaderboard(getLeaderboard());
-  }, []);
 
   const exitedCompanies = portfolio.filter((c) => c.status === "exited");
   const failedCompanies = portfolio.filter((c) => c.status === "failed");
@@ -1070,124 +1102,231 @@ export default function Results() {
         )}
 
         {/* ============ LEADERBOARD ============ */}
-        {leaderboard.length > 0 && (
+        {(leaderboard.length > 0 || cloudLeaderboard.length > 0) && (
           <Card className="bg-slate-900/60 border-slate-800">
             <CardHeader>
               <CardTitle className="text-slate-200 flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-yellow-400" />
                 Leaderboard
-                <span className="text-xs text-slate-500 font-normal ml-auto">
-                  {leaderboard.length} entries
-                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-800">
-                      <th className="py-2 px-2 text-left">#</th>
-                      <th className="py-2 px-2 text-left">Fund</th>
-                      <th className="py-2 px-2 text-right">Score</th>
-                      <th className="py-2 px-2 text-center">Grade</th>
-                      <th className="py-2 px-2 text-right">Net TVPI</th>
-                      <th className="py-2 px-2 text-right">Net IRR</th>
-                      <th className="py-2 px-2 text-right hidden sm:table-cell">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaderboard.slice(0, 10).map((entry, idx) => {
-                      const isCurrent =
-                        scoreSubmitted &&
-                        entry.fundName === fund.name &&
-                        Math.abs(entry.completedAt - Date.now()) < 60000;
-                      return (
-                        <tr
-                          key={entry.id}
-                          className={`border-b border-slate-800/50 ${isCurrent ? "bg-yellow-500/5" : ""}`}
-                        >
-                          <td className="py-2 px-2 text-slate-400">
-                            {idx === 0
-                              ? "🥇"
-                              : idx === 1
-                                ? "🥈"
-                                : idx === 2
-                                  ? "🥉"
-                                  : idx + 1}
-                          </td>
-                          <td className="py-2 px-2 text-slate-200 font-medium truncate max-w-[120px]">
-                            {entry.fundName}
-                            {entry.scenarioId &&
-                              entry.scenarioId !== "sandbox" && (
-                                <span className="text-xs text-slate-500 ml-1">
-                                  ({entry.scenarioId.replace(/_/g, " ")})
-                                </span>
-                              )}
-                          </td>
-                          <td className="py-2 px-2 text-right font-bold text-yellow-400">
-                            {entry.finalScore}
-                          </td>
-                          <td className="py-2 px-2 text-center">
-                            <Badge variant="outline" className="text-xs">
-                              {entry.grade}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-2 text-right text-slate-300">
-                            {formatMultiple(entry.tvpiNet)}
-                          </td>
-                          <td className="py-2 px-2 text-right text-slate-300">
-                            {formatIRR(entry.irrNet)}
-                          </td>
-                          <td className="py-2 px-2 text-right text-slate-500 hidden sm:table-cell">
-                            {new Date(entry.completedAt).toLocaleDateString(
-                              undefined,
-                              { month: "short", day: "numeric" },
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              {/* Tabs */}
+              <div className="flex gap-1 mb-4 rounded-lg bg-slate-800/50 p-1">
+                <button
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${leaderboardTab === "global" ? "bg-slate-700 text-slate-200" : "text-slate-400 hover:text-slate-300"}`}
+                  onClick={() => setLeaderboardTab("global")}
+                >
+                  Global
+                </button>
+                <button
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${leaderboardTab === "local" ? "bg-slate-700 text-slate-200" : "text-slate-400 hover:text-slate-300"}`}
+                  onClick={() => setLeaderboardTab("local")}
+                >
+                  Local
+                </button>
               </div>
-              <div className="mt-3 text-right">
-                {showClearConfirm ? (
-                  <div className="inline-flex items-center gap-2">
-                    <span className="text-xs text-slate-400">
-                      Clear all scores?
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        clearLeaderboard();
-                        setLeaderboard([]);
-                        setShowClearConfirm(false);
-                      }}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setShowClearConfirm(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-xs text-slate-500"
-                    onClick={() => setShowClearConfirm(true)}
-                  >
-                    Clear Leaderboard
-                  </Button>
-                )}
-              </div>
+
+              {/* Global leaderboard */}
+              {leaderboardTab === "global" && (
+                <>
+                  {cloudLeaderboard.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-slate-500">
+                      {user
+                        ? "No global scores yet. Yours will be the first!"
+                        : "Sign in to compete on the global leaderboard."}
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                            <th className="py-2 px-2 text-left">#</th>
+                            <th className="py-2 px-2 text-left">Player</th>
+                            <th className="py-2 px-2 text-left">Fund</th>
+                            <th className="py-2 px-2 text-right">Score</th>
+                            <th className="py-2 px-2 text-center">Grade</th>
+                            <th className="py-2 px-2 text-right hidden sm:table-cell">
+                              TVPI
+                            </th>
+                            <th className="py-2 px-2 text-right hidden sm:table-cell">
+                              IRR
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cloudLeaderboard.slice(0, 20).map((entry, idx) => {
+                            const isOwn = user && entry.user_id === user.id;
+                            return (
+                              <tr
+                                key={entry.id}
+                                className={`border-b border-slate-800/50 ${isOwn ? "bg-yellow-500/5" : ""}`}
+                              >
+                                <td className="py-2 px-2 text-slate-400">
+                                  {idx === 0
+                                    ? "🥇"
+                                    : idx === 1
+                                      ? "🥈"
+                                      : idx === 2
+                                        ? "🥉"
+                                        : idx + 1}
+                                </td>
+                                <td className="py-2 px-2 text-slate-300 truncate max-w-[80px]">
+                                  {entry.profiles?.username || "Anonymous"}
+                                </td>
+                                <td className="py-2 px-2 text-slate-200 font-medium truncate max-w-[100px]">
+                                  {entry.fund_name}
+                                </td>
+                                <td className="py-2 px-2 text-right font-bold text-yellow-400">
+                                  {entry.final_score}
+                                </td>
+                                <td className="py-2 px-2 text-center">
+                                  <Badge variant="outline" className="text-xs">
+                                    {entry.grade}
+                                  </Badge>
+                                </td>
+                                <td className="py-2 px-2 text-right text-slate-300 hidden sm:table-cell">
+                                  {formatMultiple(entry.tvpi_net)}
+                                </td>
+                                <td className="py-2 px-2 text-right text-slate-300 hidden sm:table-cell">
+                                  {formatIRR(entry.irr_net)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Local leaderboard */}
+              {leaderboardTab === "local" && (
+                <>
+                  {leaderboard.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-slate-500">
+                      No local scores yet.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-xs text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                              <th className="py-2 px-2 text-left">#</th>
+                              <th className="py-2 px-2 text-left">Fund</th>
+                              <th className="py-2 px-2 text-right">Score</th>
+                              <th className="py-2 px-2 text-center">Grade</th>
+                              <th className="py-2 px-2 text-right">Net TVPI</th>
+                              <th className="py-2 px-2 text-right">Net IRR</th>
+                              <th className="py-2 px-2 text-right hidden sm:table-cell">
+                                Date
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {leaderboard.slice(0, 10).map((entry, idx) => {
+                              const isCurrent =
+                                scoreSubmitted &&
+                                entry.fundName === fund.name &&
+                                Math.abs(entry.completedAt - Date.now()) <
+                                  60000;
+                              return (
+                                <tr
+                                  key={entry.id}
+                                  className={`border-b border-slate-800/50 ${isCurrent ? "bg-yellow-500/5" : ""}`}
+                                >
+                                  <td className="py-2 px-2 text-slate-400">
+                                    {idx === 0
+                                      ? "🥇"
+                                      : idx === 1
+                                        ? "🥈"
+                                        : idx === 2
+                                          ? "🥉"
+                                          : idx + 1}
+                                  </td>
+                                  <td className="py-2 px-2 text-slate-200 font-medium truncate max-w-[120px]">
+                                    {entry.fundName}
+                                    {entry.scenarioId &&
+                                      entry.scenarioId !== "sandbox" && (
+                                        <span className="text-xs text-slate-500 ml-1">
+                                          ({entry.scenarioId.replace(/_/g, " ")}
+                                          )
+                                        </span>
+                                      )}
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-bold text-yellow-400">
+                                    {entry.finalScore}
+                                  </td>
+                                  <td className="py-2 px-2 text-center">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {entry.grade}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2 text-right text-slate-300">
+                                    {formatMultiple(entry.tvpiNet)}
+                                  </td>
+                                  <td className="py-2 px-2 text-right text-slate-300">
+                                    {formatIRR(entry.irrNet)}
+                                  </td>
+                                  <td className="py-2 px-2 text-right text-slate-500 hidden sm:table-cell">
+                                    {new Date(
+                                      entry.completedAt,
+                                    ).toLocaleDateString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-3 text-right">
+                        {showClearConfirm ? (
+                          <div className="inline-flex items-center gap-2">
+                            <span className="text-xs text-slate-400">
+                              Clear all scores?
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                clearLeaderboard();
+                                setLeaderboard([]);
+                                setShowClearConfirm(false);
+                              }}
+                            >
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setShowClearConfirm(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs text-slate-500"
+                            onClick={() => setShowClearConfirm(true)}
+                          >
+                            Clear Leaderboard
+                          </Button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         )}

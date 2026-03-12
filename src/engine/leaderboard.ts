@@ -3,7 +3,8 @@
 // Persists top 20 scores in localStorage.
 // ============================================================
 
-import type { LeaderboardEntry } from "./types";
+import type { CloudLeaderboardEntry, LeaderboardEntry } from "./types";
+import { supabase } from "@/lib/supabase";
 
 const STORAGE_KEY = "vencap-leaderboard";
 const MAX_ENTRIES = 20;
@@ -47,4 +48,53 @@ export function isHighScore(score: number): boolean {
   const entries = getLeaderboard();
   if (entries.length < MAX_ENTRIES) return true;
   return score > entries[entries.length - 1].finalScore;
+}
+
+// ============================================================
+// CLOUD LEADERBOARD (Supabase)
+// ============================================================
+
+/** Fetch the global leaderboard from Supabase. */
+export async function getCloudLeaderboard(
+  limit = 50,
+  scenarioId?: string,
+  difficulty?: string,
+): Promise<CloudLeaderboardEntry[]> {
+  if (!supabase) return [];
+
+  let query = supabase
+    .from("leaderboard_entries")
+    .select("*, profiles(username)")
+    .order("final_score", { ascending: false })
+    .limit(limit);
+
+  if (scenarioId) query = query.eq("scenario_id", scenarioId);
+  if (difficulty) query = query.eq("difficulty", difficulty);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Failed to fetch leaderboard:", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Submit a score to the global Supabase leaderboard. */
+export async function submitToCloudLeaderboard(
+  userId: string,
+  entry: Omit<
+    CloudLeaderboardEntry,
+    "id" | "user_id" | "completed_at" | "profiles"
+  >,
+): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from("leaderboard_entries")
+    .insert({ ...entry, user_id: userId });
+
+  if (error) {
+    console.error("Failed to submit to leaderboard:", error.message);
+    return false;
+  }
+  return true;
 }
