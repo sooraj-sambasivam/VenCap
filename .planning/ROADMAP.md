@@ -105,7 +105,11 @@ Plans:
 3. A toggleable contextual hint appears after high-stakes decisions naming which skills were exercised and by how much
 4. Skills data persists in the Zustand store across browser sessions and fund resets — starting Fund II carries over all skill XP from Fund I
 5. Undo (Cmd+Z / undo button) never rolls back skill XP — skills are excluded from `GameSnapshot` at the type level
-   **Plans**: TBD
+   **Plans:** 1 plan
+
+Plans:
+
+- [ ] 05-01-PLAN.md — Contextual skill hint toasts + showSkillHints toggle (SKIL-05)
 
 ### Phase 6: Interaction Feedback
 
@@ -159,7 +163,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. Infrastructure Setup  | 1/1            | Complete    | 2026-03-12 |
 | 3. Timeline Modes        | 2/2            | Complete    | 2026-03-12 |
 | 4. Fundraising Flow      | 3/3            | Complete    | 2026-03-12 |
-| 5. VC Skills System      | 0/TBD          | Not started | -          |
+| 5. VC Skills System      | 0/1            | Planning    | -          |
 | 6. Interaction Feedback  | 0/TBD          | Not started | -          |
 | 7. LLM Report Generation | 0/TBD          | Not started | -          |
 | 8. Quality Gate          | 0/TBD          | Not started | -          |
