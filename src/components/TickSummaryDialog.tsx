@@ -17,6 +17,7 @@ import {
   BarChart3,
   Users,
   Building2,
+  Coffee,
 } from "lucide-react";
 
 const IMPACT_STYLES = {
@@ -45,23 +46,37 @@ const CATEGORY_LABELS = {
   fund: "Fund",
 } as const;
 
-function SummaryItem({ item }: { item: TickSummaryItem }) {
+function SummaryItem({
+  item,
+  index,
+}: {
+  item: TickSummaryItem;
+  index: number;
+}) {
   const ImpactIcon = IMPACT_ICONS[item.impact];
   const CategoryIcon = CATEGORY_ICONS[item.category];
 
   return (
-    <div className="flex items-start gap-3 py-2">
-      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
-        <CategoryIcon className="size-3.5 text-muted-foreground" />
+    <div
+      className="animate-in fade-in slide-in-from-bottom-1 duration-200"
+      style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
+    >
+      <div className="flex items-start gap-3 py-2">
+        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+          <CategoryIcon className="size-3.5 text-muted-foreground" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className={`text-sm ${IMPACT_STYLES[item.impact]}`}>
+            {item.description}
+          </p>
+          {item.cause && (
+            <p className="text-xs text-muted-foreground mt-0.5">{item.cause}</p>
+          )}
+        </div>
+        <ImpactIcon
+          className={`mt-0.5 size-4 shrink-0 ${IMPACT_STYLES[item.impact]}`}
+        />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className={`text-sm ${IMPACT_STYLES[item.impact]}`}>
-          {item.description}
-        </p>
-      </div>
-      <ImpactIcon
-        className={`mt-0.5 size-4 shrink-0 ${IMPACT_STYLES[item.impact]}`}
-      />
     </div>
   );
 }
@@ -75,7 +90,29 @@ export function TickSummaryDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  if (!summary || summary.items.length === 0) return null;
+  if (!summary) return null;
+
+  // Empty state — quiet month
+  if (summary.items.length === 0) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Month Summary — Year {getGameYear(summary.month)},{" "}
+              {getMonthName(summary.month)}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <Coffee className="size-8 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Quiet month — no significant changes
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Group items by category
   const grouped = summary.items.reduce(
@@ -93,6 +130,9 @@ export function TickSummaryDialog({
   const negativeCount = summary.items.filter(
     (i) => i.impact === "negative",
   ).length;
+
+  // Track global index across categories for staggered animation
+  let globalIndex = 0;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -134,9 +174,16 @@ export function TickSummaryDialog({
                 <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {CATEGORY_LABELS[category]}
                 </p>
-                {items.map((item, i) => (
-                  <SummaryItem key={i} item={item} />
-                ))}
+                {items.map((item) => {
+                  const itemIndex = globalIndex++;
+                  return (
+                    <SummaryItem
+                      key={itemIndex}
+                      item={item}
+                      index={itemIndex}
+                    />
+                  );
+                })}
               </div>
             ))}
           </div>

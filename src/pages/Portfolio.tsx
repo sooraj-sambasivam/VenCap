@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ import type {
   BoardMeeting,
   DecisionRecord,
   CompanyMilestone,
+  Fund,
+  ActionPreview,
 } from "@/engine/types";
 import {
   ArrowLeft,
@@ -55,6 +57,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TutorialOverlay } from "@/components/TutorialOverlay";
+import { ActionPreviewPanel } from "@/components/ActionPreviewPanel";
+import { previewSecondary } from "@/engine/actionPreview";
 
 const REGION_SHORT: Record<string, string> = {
   silicon_valley: "SV",
@@ -279,7 +283,7 @@ export default function Portfolio() {
             return (
               <Card
                 key={company.id}
-                className={isExpanded ? "border-primary/30" : ""}
+                className={`transition-all duration-200 ${isExpanded ? "border-primary/30" : ""}`}
               >
                 {/* Summary Row */}
                 <button
@@ -381,7 +385,7 @@ export default function Portfolio() {
 
                 {/* Expanded Detail */}
                 {isExpanded && (
-                  <div className="px-4 pb-4">
+                  <div className="px-4 pb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <Separator className="mb-4" />
                     <Tabs defaultValue="actions" className="w-full">
                       <TabsList className="mb-4 w-full overflow-x-auto flex justify-start">
@@ -426,7 +430,10 @@ export default function Portfolio() {
                       </TabsList>
 
                       {/* ACTIONS TAB */}
-                      <TabsContent value="actions" className="space-y-4">
+                      <TabsContent
+                        value="actions"
+                        className="space-y-4 animate-in fade-in duration-200"
+                      >
                         <ActionsSection
                           company={company}
                           fund={fund}
@@ -437,13 +444,19 @@ export default function Portfolio() {
                       </TabsContent>
 
                       {/* EVENTS TAB */}
-                      <TabsContent value="events">
+                      <TabsContent
+                        value="events"
+                        className="animate-in fade-in duration-200"
+                      >
                         <EventsTimeline events={company.events} />
                       </TabsContent>
 
                       {/* MILESTONES TAB */}
                       {(company.milestones ?? []).length > 0 && (
-                        <TabsContent value="milestones">
+                        <TabsContent
+                          value="milestones"
+                          className="animate-in fade-in duration-200"
+                        >
                           <MilestonesSection
                             milestones={company.milestones ?? []}
                           />
@@ -452,7 +465,10 @@ export default function Portfolio() {
 
                       {/* FOLLOW-ON TAB */}
                       {fo && (
-                        <TabsContent value="followon">
+                        <TabsContent
+                          value="followon"
+                          className="animate-in fade-in duration-200"
+                        >
                           <FollowOnSection
                             company={company}
                             opportunity={fo}
@@ -480,10 +496,14 @@ export default function Portfolio() {
 
                       {/* SECONDARY TAB */}
                       {sec && (
-                        <TabsContent value="secondary">
+                        <TabsContent
+                          value="secondary"
+                          className="animate-in fade-in duration-200"
+                        >
                           <SecondarySection
                             company={company}
                             offer={sec}
+                            fund={fund}
                             onSell={() => sellSecondary(sec.id)}
                             onReject={() => rejectSecondary(sec.id)}
                           />
@@ -492,10 +512,14 @@ export default function Portfolio() {
 
                       {/* BUYOUT TAB */}
                       {bo && (
-                        <TabsContent value="buyout">
+                        <TabsContent
+                          value="buyout"
+                          className="animate-in fade-in duration-200"
+                        >
                           <BuyoutSection
                             company={company}
                             offer={bo}
+                            fund={fund}
                             onAccept={() => acceptBuyout(bo.id)}
                             onReject={() => rejectBuyout(bo.id)}
                           />
@@ -504,7 +528,10 @@ export default function Portfolio() {
 
                       {/* DECISIONS TAB */}
                       {decs.length > 0 && (
-                        <TabsContent value="decisions" className="space-y-4">
+                        <TabsContent
+                          value="decisions"
+                          className="space-y-4 animate-in fade-in duration-200"
+                        >
                           {decs.map((dec) => (
                             <DecisionSection
                               key={dec.id}
@@ -519,19 +546,28 @@ export default function Portfolio() {
 
                       {/* HISTORY TAB */}
                       {dh.length > 0 && (
-                        <TabsContent value="history">
+                        <TabsContent
+                          value="history"
+                          className="animate-in fade-in duration-200"
+                        >
                           <DecisionHistorySection records={dh} />
                         </TabsContent>
                       )}
 
                       {/* TEAM TAB */}
-                      <TabsContent value="team">
+                      <TabsContent
+                        value="team"
+                        className="animate-in fade-in duration-200"
+                      >
                         <TeamSection company={company} />
                       </TabsContent>
 
                       {/* BOARD MEETING TAB */}
                       {bm && (
-                        <TabsContent value="boardmeeting">
+                        <TabsContent
+                          value="boardmeeting"
+                          className="animate-in fade-in duration-200"
+                        >
                           <BoardMeetingSection
                             meeting={bm}
                             onResolve={(choicesByItemId) => {
@@ -547,7 +583,10 @@ export default function Portfolio() {
                       )}
 
                       {/* CAP TABLE TAB */}
-                      <TabsContent value="captable">
+                      <TabsContent
+                        value="captable"
+                        className="animate-in fade-in duration-200"
+                      >
                         <CapTableSection company={company} />
                       </TabsContent>
                     </Tabs>
@@ -595,6 +634,7 @@ function ActionsSection({
   onSupport: (companyId: string, action: string) => void;
   onHire: (companyId: string, talentId: string) => void;
 }) {
+  const [pulsingAction, setPulsingAction] = useState<string | null>(null);
   const isAdvisor =
     company.influence === "advisor" ||
     company.influence === "board_seat" ||
@@ -603,6 +643,19 @@ function ActionsSection({
   const leadershipTalent = talentPool.filter(
     (t) => t.seniority === "leadership",
   );
+
+  const handleSupport = useCallback(
+    (action: string) => {
+      onSupport(company.id, action);
+      setPulsingAction(action);
+      setTimeout(() => setPulsingAction(null), 500);
+    },
+    [company.id, onSupport],
+  );
+
+  function pulseClass(action: string): string {
+    return pulsingAction === action ? "animate-pulse" : "";
+  }
 
   return (
     <div className="space-y-4">
@@ -615,8 +668,8 @@ function ActionsSection({
           <Button
             size="sm"
             variant="secondary"
-            className="gap-1.5"
-            onClick={() => onSupport(company.id, "connect_talent")}
+            className={`gap-1.5 ${pulseClass("connect_talent")}`}
+            onClick={() => handleSupport("connect_talent")}
             disabled={company.status !== "active"}
           >
             <Users className="h-3.5 w-3.5" /> Connect Talent
@@ -624,8 +677,8 @@ function ActionsSection({
           <Button
             size="sm"
             variant="secondary"
-            className="gap-1.5"
-            onClick={() => onSupport(company.id, "make_intros")}
+            className={`gap-1.5 ${pulseClass("make_intros")}`}
+            onClick={() => handleSupport("make_intros")}
             disabled={company.status !== "active"}
           >
             <Handshake className="h-3.5 w-3.5" /> Make Intros
@@ -633,8 +686,8 @@ function ActionsSection({
           <Button
             size="sm"
             variant="secondary"
-            className="gap-1.5"
-            onClick={() => onSupport(company.id, "give_advice")}
+            className={`gap-1.5 ${pulseClass("give_advice")}`}
+            onClick={() => handleSupport("give_advice")}
             disabled={company.status !== "active"}
           >
             <MessageSquare className="h-3.5 w-3.5" /> Give Advice
@@ -663,8 +716,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "force_focus")}
+              className={`gap-1.5 ${pulseClass("force_focus")}`}
+              onClick={() => handleSupport("force_focus")}
               disabled={
                 company.status !== "active" ||
                 (company.founderState !== "distracted" &&
@@ -676,8 +729,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "restructure_burn")}
+              className={`gap-1.5 ${pulseClass("restructure_burn")}`}
+              onClick={() => handleSupport("restructure_burn")}
               disabled={company.status !== "active"}
             >
               <Scissors className="h-3.5 w-3.5" /> Restructure Burn
@@ -685,8 +738,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "replace_gtm")}
+              className={`gap-1.5 ${pulseClass("replace_gtm")}`}
+              onClick={() => handleSupport("replace_gtm")}
               disabled={company.status !== "active"}
             >
               <Replace className="h-3.5 w-3.5" /> Replace GTM
@@ -694,8 +747,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "founder_intervention")}
+              className={`gap-1.5 ${pulseClass("founder_intervention")}`}
+              onClick={() => handleSupport("founder_intervention")}
               disabled={
                 company.status !== "active" ||
                 company.relationship < 50 ||
@@ -719,8 +772,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "engineering_sprint")}
+              className={`gap-1.5 ${pulseClass("engineering_sprint")}`}
+              onClick={() => handleSupport("engineering_sprint")}
               disabled={fund.cashAvailable < 50_000}
             >
               <Wrench className="h-3.5 w-3.5" /> Engineering Sprint
@@ -728,8 +781,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "gtm_sprint")}
+              className={`gap-1.5 ${pulseClass("gtm_sprint")}`}
+              onClick={() => handleSupport("gtm_sprint")}
               disabled={fund.cashAvailable < 100_000}
             >
               <Megaphone className="h-3.5 w-3.5" /> GTM Sprint
@@ -737,8 +790,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "product_sprint")}
+              className={`gap-1.5 ${pulseClass("product_sprint")}`}
+              onClick={() => handleSupport("product_sprint")}
               disabled={fund.cashAvailable < 75_000}
             >
               <Box className="h-3.5 w-3.5" /> Product Sprint
@@ -746,8 +799,8 @@ function ActionsSection({
             <Button
               size="sm"
               variant="secondary"
-              className="gap-1.5"
-              onClick={() => onSupport(company.id, "capital_injection")}
+              className={`gap-1.5 ${pulseClass("capital_injection")}`}
+              onClick={() => handleSupport("capital_injection")}
               disabled={fund.cashAvailable < 100_000}
             >
               <DollarSign className="h-3.5 w-3.5" /> Capital Injection
@@ -997,11 +1050,13 @@ function FollowOnSection({
 function SecondarySection({
   company,
   offer,
+  fund,
   onSell,
   onReject,
 }: {
   company: PortfolioCompany;
   offer: SecondaryOffer;
+  fund: Fund;
   onSell: () => void;
   onReject: () => void;
 }) {
@@ -1098,6 +1153,15 @@ function SecondarySection({
         </p>
       </div>
 
+      <ActionPreviewPanel
+        preview={previewSecondary(
+          fund,
+          company,
+          offer.offerPercentage,
+          offer.offerMultiple,
+        )}
+      />
+
       <div className="flex gap-3">
         <Button
           onClick={() => {
@@ -1131,11 +1195,13 @@ function SecondarySection({
 function BuyoutSection({
   company,
   offer,
+  fund,
   onAccept,
   onReject,
 }: {
   company: PortfolioCompany;
   offer: BuyoutOffer;
+  fund: Fund;
   onAccept: () => void;
   onReject: () => void;
 }) {
@@ -1147,6 +1213,24 @@ function BuyoutSection({
     pe: "Private Equity",
     strategic: "Strategic Acquirer",
     rival_fund: "Rival Fund",
+  };
+
+  const buyoutPreview: ActionPreview = {
+    actionType: "Buyout",
+    effects: [
+      {
+        metric: "Cash Available",
+        before: fund.cashAvailable,
+        after: fund.cashAvailable + cashReturned,
+        direction: "up",
+      },
+      {
+        metric: "Ownership",
+        before: company.ownership,
+        after: 0,
+        direction: "down",
+      },
+    ],
   };
 
   return (
@@ -1195,6 +1279,8 @@ function BuyoutSection({
           </span>
         </p>
       </div>
+
+      <ActionPreviewPanel preview={buyoutPreview} />
 
       <div className="flex gap-3">
         <Button
@@ -1463,12 +1549,15 @@ function BoardMeetingSection({
   onResolve: (choicesByItemId: Record<string, number>) => void;
 }) {
   const [choices, setChoices] = useState<Record<string, number>>({});
+  const [confirming, setConfirming] = useState(false);
   const allResolved = meeting.agendaItems.every(
     (item) => choices[item.id] !== undefined,
   );
+  const resolvedCount = Object.keys(choices).length;
 
   function handleChoice(itemId: string, optionIndex: number) {
     setChoices((prev) => ({ ...prev, [itemId]: optionIndex }));
+    setConfirming(false);
   }
 
   return (
@@ -1544,15 +1633,35 @@ function BoardMeetingSection({
         ))}
       </div>
 
+      {allResolved && confirming && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 animate-in fade-in duration-200">
+          <p className="text-xs font-medium text-muted-foreground mb-1">
+            Summary
+          </p>
+          <p className="text-sm">
+            Resolving {resolvedCount} agenda item
+            {resolvedCount !== 1 ? "s" : ""}. This action cannot be undone.
+          </p>
+        </div>
+      )}
+
       <Button
         className="w-full gap-2"
         disabled={!allResolved}
-        onClick={() => onResolve(choices)}
+        onClick={() => {
+          if (!confirming) {
+            setConfirming(true);
+          } else {
+            onResolve(choices);
+          }
+        }}
       >
         <Calendar className="h-4 w-4" />
-        {allResolved
-          ? "Submit Board Decisions"
-          : `Select all ${meeting.agendaItems.length} items to submit`}
+        {!allResolved
+          ? `Select all ${meeting.agendaItems.length} items to submit`
+          : confirming
+            ? "Confirm Board Decisions"
+            : "Submit Board Decisions"}
       </Button>
     </div>
   );

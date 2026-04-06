@@ -710,6 +710,7 @@ export interface TickSummaryItem {
   description: string;
   impact: "positive" | "negative" | "neutral";
   delta?: number; // optional numeric change for display
+  cause?: string; // Why this change happened
 }
 
 export interface TickSummary {

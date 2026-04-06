@@ -533,6 +533,7 @@ function AIReportsTab({
             : r,
         ),
       }));
+      toast.success("Report generated successfully");
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         useGameStore.setState((state) => ({
@@ -542,6 +543,7 @@ function AIReportsTab({
               : r,
           ),
         }));
+        toast.error("Generation failed — try again");
       }
     } finally {
       setStreamingId(null);
@@ -665,10 +667,15 @@ function AIReportsTab({
               <Button
                 size="sm"
                 onClick={handleGenerate}
+                disabled={isStreaming}
                 className="gap-1.5 bg-purple-600 hover:bg-purple-700"
               >
-                <Sparkles className="h-3 w-3" />
-                Generate Report
+                {isStreaming ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                {isStreaming ? "Generating..." : "Generate Report"}
               </Button>
             )}
           </div>
@@ -714,7 +721,7 @@ function AIReportsTab({
             </Button>
           </div>
           {reportHistory
-            .filter((r) => r.status === "complete")
+            .filter((r) => r.status === "complete" || r.status === "error")
             .map((report) => (
               <ReportHistoryCard key={report.id} report={report} />
             ))}
@@ -722,7 +729,9 @@ function AIReportsTab({
       )}
 
       {/* Empty State */}
-      {reportHistory.filter((r) => r.status === "complete").length === 0 &&
+      {reportHistory.filter(
+        (r) => r.status === "complete" || r.status === "error",
+      ).length === 0 &&
         !isStreaming && (
           <Card>
             <CardContent className="py-12 text-center">
@@ -828,24 +837,33 @@ function ReportHistoryCard({ report }: { report: ReportGenerationResult }) {
   const [expanded, setExpanded] = useState(false);
   const typeInfo = REPORT_TYPES.find((rt) => rt.type === report.type);
   const date = new Date(report.createdAt);
-  const wordCount = report.content.split(/\s+/).length;
+  const isError = report.status === "error";
+  const wordCount = isError ? 0 : report.content.split(/\s+/).length;
 
   return (
-    <Card>
+    <Card className={isError ? "border-red-500/30 bg-red-500/5" : ""}>
       <div
-        className="p-4 cursor-pointer hover:bg-secondary/20 transition-colors"
+        className={`p-4 cursor-pointer transition-colors ${isError ? "hover:bg-red-500/10" : "hover:bg-secondary/20"}`}
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400">{typeInfo?.icon}</span>
+          <span className={isError ? "text-red-400" : "text-purple-400"}>
+            {isError ? <XCircle className="h-4 w-4" /> : typeInfo?.icon}
+          </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">
                 {typeInfo?.label ?? report.type}
               </span>
-              <Badge variant="outline" className="text-[10px]">
-                {wordCount} words
-              </Badge>
+              {isError ? (
+                <Badge variant="destructive" className="text-[10px]">
+                  Failed
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px]">
+                  {wordCount} words
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               {date.toLocaleTimeString()} — {date.toLocaleDateString()}
@@ -860,9 +878,21 @@ function ReportHistoryCard({ report }: { report: ReportGenerationResult }) {
       </div>
       {expanded && (
         <CardContent className="pt-0 border-t border-border/30">
-          <div className="prose prose-sm prose-invert max-w-none max-h-[500px] overflow-y-auto">
-            <StreamingMarkdown content={report.content} />
-          </div>
+          {isError ? (
+            <div className="py-4 text-center">
+              <XCircle className="h-8 w-8 text-red-400/50 mx-auto mb-2" />
+              <p className="text-sm text-red-400">
+                {report.error ?? "Report generation failed"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Try generating the report again.
+              </p>
+            </div>
+          ) : (
+            <div className="prose prose-sm prose-invert max-w-none max-h-[500px] overflow-y-auto">
+              <StreamingMarkdown content={report.content} />
+            </div>
+          )}
         </CardContent>
       )}
     </Card>

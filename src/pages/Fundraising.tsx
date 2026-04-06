@@ -21,6 +21,7 @@ import {
   Settings,
   ChevronRight,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
 // ============ HELPERS ============
@@ -126,6 +127,15 @@ export default function Fundraising() {
   // Local state for fund terms editor
   const [localTerms, setLocalTerms] = useState<FundTermsConfig | null>(null);
 
+  // FEED-05: Loading states
+  const [pitchingLPId, setPitchingLPId] = useState<string | null>(null);
+  const [isAdvancingClose, setIsAdvancingClose] = useState(false);
+  const [isCompletingClose, setIsCompletingClose] = useState(false);
+
+  // FEED-06: Visual flash tracking for LP status changes
+  const [flashLPId, setFlashLPId] = useState<string | null>(null);
+  const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
+
   // Sync localTerms from campaign when opened or campaign changes
   const terms = localTerms ?? activeCampaign?.terms ?? null;
 
@@ -148,35 +158,56 @@ export default function Fundraising() {
   }
 
   function handlePitchLP(prospectId: string, prospectName: string) {
-    const result = pitchLP(prospectId);
-    if (!result) return;
-    if (result.success) {
-      toast.success(
-        `${prospectName}: ${result.reason ?? t("fundraising.pitch.advanced", "Status advanced.")}`,
-      );
-    } else {
-      if (result.newStatus === "declined") {
-        toast.error(
-          `${prospectName}: ${result.reason ?? t("fundraising.pitch.declined", "Declined.")}`,
-        );
+    setPitchingLPId(prospectId);
+    setTimeout(() => {
+      const result = pitchLP(prospectId);
+      setPitchingLPId(null);
+      if (!result) return;
+      if (result.success) {
+        toast.success(`Successfully pitched to ${prospectName}`);
+        setFlashLPId(prospectId);
+        setFlashType("success");
+        setTimeout(() => {
+          setFlashLPId(null);
+          setFlashType(null);
+        }, 800);
       } else {
-        toast.info(
-          `${prospectName}: ${result.reason ?? t("fundraising.pitch.notYet", "Not yet.")}`,
-        );
+        if (result.newStatus === "declined") {
+          toast.error(`${prospectName} declined — insufficient interest`);
+          setFlashLPId(prospectId);
+          setFlashType("error");
+          setTimeout(() => {
+            setFlashLPId(null);
+            setFlashType(null);
+          }, 800);
+        } else {
+          toast.info(
+            `${prospectName}: ${result.reason ?? t("fundraising.pitch.notYet", "Not yet.")}`,
+          );
+        }
       }
-    }
+    }, 500);
   }
 
   function handleAdvanceClose() {
-    const result = advanceFundClose();
-    if (!result) return;
-    const label = getCloseStatusLabel(result.newCloseStatus);
-    toast.success(
-      t(
-        "fundraising.close.advanced",
-        `Reached ${label} — ${formatCurrency(result.committed)} committed.`,
-      ),
-    );
+    setIsAdvancingClose(true);
+    setTimeout(() => {
+      const result = advanceFundClose();
+      setIsAdvancingClose(false);
+      if (!result) {
+        toast.error(
+          t(
+            "fundraising.close.error",
+            "Cannot advance close — requirements not met.",
+          ),
+        );
+        return;
+      }
+      const label = getCloseStatusLabel(result.newCloseStatus);
+      toast.success(
+        `${label} achieved! ${formatCurrency(result.committed)} committed`,
+      );
+    }, 500);
   }
 
   function handleSaveTerms() {
@@ -198,13 +229,17 @@ export default function Fundraising() {
   }
 
   function handleCompleteFundClose() {
-    completeFundClose();
-    toast.success(
-      t(
-        "fundraising.complete.success",
-        "Fund closed. Starting setup for next fund.",
-      ),
-    );
+    setIsCompletingClose(true);
+    setTimeout(() => {
+      completeFundClose();
+      setIsCompletingClose(false);
+      toast.success(
+        t(
+          "fundraising.complete.success",
+          "Fund closed. Starting setup for next fund.",
+        ),
+      );
+    }, 500);
   }
 
   // Derived values
@@ -373,11 +408,18 @@ export default function Fundraising() {
                 const isPitchDisabled =
                   prospect.status === "closed" ||
                   prospect.status === "declined";
+                const isPitchingThis = pitchingLPId === prospect.id;
+                const isFlashing = flashLPId === prospect.id;
+                const flashClass = isFlashing
+                  ? flashType === "success"
+                    ? "ring-2 ring-emerald-500/50"
+                    : "ring-2 ring-red-500/50"
+                  : "";
 
                 return (
                   <div
                     key={prospect.id}
-                    className="flex flex-col gap-3 rounded-lg border border-border/50 p-3 sm:flex-row sm:items-center"
+                    className={`flex flex-col gap-3 rounded-lg border border-border/50 p-3 sm:flex-row sm:items-center transition-all duration-500 ${flashClass}`}
                   >
                     {/* LP info */}
                     <div className="flex-1 space-y-1.5">
@@ -443,14 +485,20 @@ export default function Fundraising() {
                         <Button
                           size="sm"
                           variant={isPitchDisabled ? "ghost" : "outline"}
-                          disabled={isPitchDisabled}
+                          disabled={isPitchDisabled || isPitchingThis}
                           onClick={() =>
                             handlePitchLP(prospect.id, prospect.name)
                           }
                           className="gap-1"
                         >
-                          {t("fundraising.prospect.pitch", "Pitch")}
-                          <ChevronRight className="h-3 w-3" />
+                          {isPitchingThis ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              {t("fundraising.prospect.pitch", "Pitch")}
+                              <ChevronRight className="h-3 w-3" />
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>
@@ -627,22 +675,34 @@ export default function Fundraising() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 variant="outline"
-                disabled={!canAdvanceClose}
+                disabled={!canAdvanceClose || isAdvancingClose}
                 onClick={handleAdvanceClose}
                 className="flex-1 gap-2"
               >
-                <ChevronRight className="h-4 w-4" />
-                {t("fundraising.close.advance", "Advance to Next Close")}
+                {isAdvancingClose ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                {isAdvancingClose
+                  ? t("fundraising.close.advancing", "Advancing...")
+                  : t("fundraising.close.advance", "Advance to Next Close")}
               </Button>
 
               <Button
                 variant={isFinalClose ? "default" : "ghost"}
-                disabled={!isFinalClose}
+                disabled={!isFinalClose || isCompletingClose}
                 onClick={handleCompleteFundClose}
                 className="flex-1 gap-2"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                {t("fundraising.close.complete", "Close Fund & Start Next")}
+                {isCompletingClose ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {isCompletingClose
+                  ? t("fundraising.close.completing", "Closing...")
+                  : t("fundraising.close.complete", "Close Fund & Start Next")}
               </Button>
             </div>
 

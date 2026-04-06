@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { useGameStore } from "@/engine/gameState";
 import {
   formatCurrency,
@@ -264,6 +269,10 @@ export default function Dashboard() {
       const prevPortfolio = prevState.portfolio;
       const prevCycle = prevState.marketCycle;
       const prevFund = prevState.fund!;
+      const prevDealPipeline = prevState.dealPipeline;
+      const prevFollowOns = prevState.followOnOpportunities;
+      const prevSecondaryOffers = prevState.secondaryOffers;
+      const prevBuyoutOffers = prevState.buyoutOffers;
       const prevSnapshot =
         prevState.monthlySnapshots.length > 0
           ? prevState.monthlySnapshots[prevState.monthlySnapshots.length - 1]
@@ -286,6 +295,16 @@ export default function Dashboard() {
           state.marketCycle,
           prevFund,
           state.fund,
+          {
+            prevDealPipeline,
+            currDealPipeline: state.dealPipeline,
+            prevFollowOns,
+            currFollowOns: state.followOnOpportunities,
+            prevSecondaryOffers,
+            currSecondaryOffers: state.secondaryOffers,
+            prevBuyoutOffers,
+            currBuyoutOffers: state.buyoutOffers,
+          },
         );
         if (summary.items.length > 0) {
           setTickSummary(summary);
@@ -441,12 +460,14 @@ export default function Dashboard() {
             label="Fund Size"
             value={formatCurrency(fund.currentSize)}
             sub="raised"
+            tooltip="Total capital committed by LPs. Determines your maximum deployment capacity."
           />
           <MetricCard
             icon={<Briefcase className="h-4 w-4" />}
             label="Cash Available"
             value={formatCurrency(fund.cashAvailable)}
             sub={`${formatPercent(fund.currentSize > 0 ? (fund.cashAvailable / fund.currentSize) * 100 : 0, 0)} of fund`}
+            tooltip="Remaining dry powder for new investments and follow-ons."
           />
           <MetricCard
             icon={<TrendingUp className="h-4 w-4" />}
@@ -454,12 +475,14 @@ export default function Dashboard() {
             value={formatMultiple(fund.tvpiEstimate)}
             valueClass={tvpiColor}
             dataTour="tvpi-card"
+            tooltip="Total Value to Paid-In capital. Your fund's overall return multiple. >2x is strong."
           />
           <MetricCard
             icon={<PieChart className="h-4 w-4" />}
             label="Deployed"
             value={formatPercent(deployedPct, 0)}
             sub={formatCurrency(fund.deployed)}
+            tooltip="Percentage of fund capital invested into portfolio companies."
           />
         </div>
 
@@ -500,6 +523,7 @@ export default function Dashboard() {
             label="Active"
             value={`${activeCompanies.length}`}
             sub="companies"
+            tooltip="Portfolio companies currently operating (not exited or failed)."
           />
           <MetricCard
             icon={<Trophy className="h-4 w-4" />}
@@ -510,6 +534,7 @@ export default function Dashboard() {
                 ? `${formatCurrency(totalExitReturn)} returned`
                 : "none yet"
             }
+            tooltip="Companies that achieved a liquidity event (acquisition or IPO)."
           />
           <MetricCard
             icon={<XCircle className="h-4 w-4" />}
@@ -518,12 +543,14 @@ export default function Dashboard() {
             sub={
               totalLost > 0 ? `${formatCurrency(totalLost)} lost` : "none yet"
             }
+            tooltip="Companies that failed and returned zero or near-zero capital."
           />
           <MetricCard
             icon={<BarChart3 className="h-4 w-4" />}
             label="Deals"
             value={`${dealsReviewed}`}
             sub={`${dealsPassed} passed`}
+            tooltip="Total startup deals reviewed this fund cycle."
           />
         </div>
 
@@ -534,42 +561,42 @@ export default function Dashboard() {
               <span className="text-muted-foreground font-medium">
                 Fund Economics
               </span>
-              <span>
-                Mgmt Fee:{" "}
-                <span className="font-medium">
-                  {formatFeeRate(fund.managementFeeRate ?? 0.02)}
-                </span>
-              </span>
-              <span>
-                Carry:{" "}
-                <span className="font-medium">
-                  {formatFeeRate(fund.carryRate ?? 0.2)}
-                </span>
-              </span>
-              <span>
-                Hurdle:{" "}
-                <span className="font-medium">
-                  {formatFeeRate(fund.hurdleRate ?? 0.08)}
-                </span>
-              </span>
-              <span className="hidden sm:inline">
-                Fees Charged:{" "}
-                <span className="font-medium text-yellow-400">
-                  {formatCurrency(fund.totalFeesCharged ?? 0)}
-                </span>
-              </span>
-              <span className="hidden sm:inline">
-                Carry Accrued:{" "}
-                <span className="font-medium text-emerald-400">
-                  {formatCurrency(fund.carryAccrued ?? 0)}
-                </span>
-              </span>
-              <span className="hidden sm:inline">
-                GP Earnings:{" "}
-                <span className="font-medium text-primary">
-                  {formatCurrency(fund.gpEarnings ?? 0)}
-                </span>
-              </span>
+              <EconStat
+                label="Mgmt Fee"
+                value={formatFeeRate(fund.managementFeeRate ?? 0.02)}
+                tooltip="Annual management fee charged to LPs. Typically 2% of committed capital."
+              />
+              <EconStat
+                label="Carry"
+                value={formatFeeRate(fund.carryRate ?? 0.2)}
+                tooltip="Carried interest — your share of profits above the hurdle rate."
+              />
+              <EconStat
+                label="Hurdle"
+                value={formatFeeRate(fund.hurdleRate ?? 0.08)}
+                tooltip="Minimum return LPs must receive before carry kicks in."
+              />
+              <EconStat
+                label="Fees Charged"
+                value={formatCurrency(fund.totalFeesCharged ?? 0)}
+                tooltip="Total management fees collected over the fund's life."
+                valueClass="text-yellow-400"
+                className="hidden sm:inline"
+              />
+              <EconStat
+                label="Carry Accrued"
+                value={formatCurrency(fund.carryAccrued ?? 0)}
+                tooltip="Carried interest earned but not yet distributed."
+                valueClass="text-emerald-400"
+                className="hidden sm:inline"
+              />
+              <EconStat
+                label="GP Earnings"
+                value={formatCurrency(fund.gpEarnings ?? 0)}
+                tooltip="Total general partner income from fees and carry."
+                valueClass="text-primary"
+                className="hidden sm:inline"
+              />
             </div>
           </CardContent>
         </Card>
@@ -805,6 +832,7 @@ export default function Dashboard() {
                         ? "positive"
                         : "neutral"
                   }
+                  tooltip="Federal funds rate — higher rates compress valuations and slow deal flow."
                 />
                 <EconIndicator
                   label="S&P 500"
@@ -821,6 +849,7 @@ export default function Dashboard() {
                       ? "positive"
                       : "negative"
                   }
+                  tooltip="S&P 500 index level — a proxy for public market sentiment affecting exit valuations."
                 />
                 <EconIndicator
                   label="GDP Growth"
@@ -837,6 +866,7 @@ export default function Dashboard() {
                       ? "positive"
                       : "negative"
                   }
+                  tooltip="Economic growth rate — positive growth supports portfolio company revenue."
                 />
                 <EconIndicator
                   label="Inflation"
@@ -849,6 +879,7 @@ export default function Dashboard() {
                         ? "positive"
                         : "neutral"
                   }
+                  tooltip="Consumer price inflation — high inflation erodes purchasing power and margins."
                 />
               </div>
 
@@ -1069,6 +1100,7 @@ function MetricCard({
   sub,
   valueClass,
   dataTour,
+  tooltip,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -1076,13 +1108,27 @@ function MetricCard({
   sub?: string;
   valueClass?: string;
   dataTour?: string;
+  tooltip?: string;
 }) {
   return (
     <Card {...(dataTour ? { "data-tour": dataTour } : {})}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-muted-foreground mb-1">
           {icon}
-          <span className="text-xs font-medium">{label}</span>
+          {tooltip ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-xs font-medium cursor-help border-b border-dotted border-muted-foreground/40">
+                  {label}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs">
+                {tooltip}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-xs font-medium">{label}</span>
+          )}
         </div>
         <p className={`text-xl font-bold ${valueClass ?? ""}`}>{value}</p>
         {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
@@ -1096,11 +1142,13 @@ function EconIndicator({
   value,
   direction,
   sentiment,
+  tooltip,
 }: {
   label: string;
   value: string;
   direction: "up" | "down" | "flat";
   sentiment: "positive" | "negative" | "neutral";
+  tooltip?: string;
 }) {
   const arrow = direction === "up" ? "↑" : direction === "down" ? "↓" : "→";
   const arrowColor =
@@ -1111,10 +1159,54 @@ function EconIndicator({
         : "text-muted-foreground";
   return (
     <div className="p-2 rounded bg-secondary/50 text-center">
-      <span className="text-[10px] text-muted-foreground block">{label}</span>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-[10px] text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/40">
+              {label}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <span className="text-[10px] text-muted-foreground block">{label}</span>
+      )}
       <span className="text-sm font-bold">{value}</span>
       <span className={`text-[10px] ml-1 ${arrowColor}`}>{arrow}</span>
     </div>
+  );
+}
+
+/** Inline label: value with tooltip — used in Fund Economics bar */
+function EconStat({
+  label,
+  value,
+  tooltip,
+  valueClass,
+  className,
+}: {
+  label: string;
+  value: string;
+  tooltip: string;
+  valueClass?: string;
+  className?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={`cursor-help ${className ?? ""}`}>
+          <span className="border-b border-dotted border-muted-foreground/40">
+            {label}
+          </span>
+          : <span className={`font-medium ${valueClass ?? ""}`}>{value}</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
