@@ -33,6 +33,7 @@ import type {
   DecisionRecord,
   SyndicateRelationship,
   PlayerProfile,
+  SkillId,
   FundraisingCampaign,
   ReportGenerationResult,
 } from "./types";
@@ -128,7 +129,9 @@ import {
   getLabSpinOutXP,
   getFundraisingXP,
   getMonthlyPassiveXP,
+  SKILL_LABELS,
 } from "./skills";
+import { toast } from "sonner";
 
 // ============================================================
 // INITIAL STATE
@@ -939,6 +942,54 @@ function checkAndGenerateMilestones(
 }
 
 // ============================================================
+// HELPER: SKILL HINT TOASTS (SKIL-05)
+// ============================================================
+
+function emitSkillHintToast(
+  before: PlayerProfile,
+  after: PlayerProfile,
+  showHints: boolean,
+): void {
+  if (!showHints) return;
+
+  const skillIds = Object.keys(after.skills) as SkillId[];
+  const gains: {
+    id: SkillId;
+    amount: number;
+    levelUp: boolean;
+    newLevel: number;
+  }[] = [];
+
+  for (const id of skillIds) {
+    const xpGained = after.skills[id].xp - before.skills[id].xp;
+    if (xpGained <= 0) continue;
+    gains.push({
+      id,
+      amount: xpGained,
+      levelUp: after.skills[id].level > before.skills[id].level,
+      newLevel: after.skills[id].level,
+    });
+  }
+
+  if (gains.length === 0) return;
+
+  const skillLine = gains
+    .map((g) => `${SKILL_LABELS[g.id]} +${g.amount}`)
+    .join(", ");
+  const levelUps = gains.filter((g) => g.levelUp);
+  const levelUpLine =
+    levelUps.length > 0
+      ? ` — Level up! ${levelUps.map((g) => `${SKILL_LABELS[g.id]} Lv.${g.newLevel}`).join(", ")}`
+      : "";
+
+  if (levelUps.length > 0) {
+    toast.success(`Skills: ${skillLine}${levelUpLine}`, { duration: 4000 });
+  } else {
+    toast.info(`Skills: ${skillLine}`, { duration: 3000 });
+  }
+}
+
+// ============================================================
 // ZUSTAND STORE
 // ============================================================
 
@@ -981,6 +1032,7 @@ export const useGameStore = create<GameState>()(
 
       // v4.0: Skills
       playerProfile: createInitialPlayerProfile(),
+      showSkillHints: true,
 
       // v4.0: Fundraising
       activeCampaign: null as FundraisingCampaign | null,
@@ -2413,9 +2465,10 @@ export const useGameStore = create<GameState>()(
 
         // Award LP action XP
         const postLP = get();
-        set({
-          playerProfile: applyXPAwards(postLP.playerProfile, getLPActionXP()),
-        });
+        const profileBefore = postLP.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getLPActionXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
 
         return { success: true, sentimentGain: effect.sentimentDelta };
       },
@@ -2504,11 +2557,14 @@ export const useGameStore = create<GameState>()(
                 }
               : m,
           ),
-          playerProfile: applyXPAwards(
-            state.playerProfile,
-            getBoardMeetingXP(meeting.agendaItems.length),
-          ),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(
+          profileBefore,
+          getBoardMeetingXP(meeting.agendaItems.length),
+        );
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -2620,12 +2676,13 @@ export const useGameStore = create<GameState>()(
 
         // Award skill XP for investing
         const investState = get();
-        set({
-          playerProfile: applyXPAwards(
-            investState.playerProfile,
-            getInvestXP(startup.stage),
-          ),
-        });
+        const profileBefore = investState.playerProfile;
+        const profileAfter = applyXPAwards(
+          profileBefore,
+          getInvestXP(startup.stage),
+        );
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
 
         return { success: true };
       },
@@ -2677,8 +2734,11 @@ export const useGameStore = create<GameState>()(
           followOnOpportunities: state.followOnOpportunities.filter(
             (f) => f.companyId !== companyId,
           ),
-          playerProfile: applyXPAwards(state.playerProfile, getFollowOnXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getFollowOnXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -2745,8 +2805,11 @@ export const useGameStore = create<GameState>()(
           secondaryOffers: state.secondaryOffers.filter(
             (s) => s.id !== offerId,
           ),
-          playerProfile: applyXPAwards(state.playerProfile, getSecondaryXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getSecondaryXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -2846,9 +2909,10 @@ export const useGameStore = create<GameState>()(
         });
         // Award XP for successful buyout exit
         const postBuyout = get();
-        set({
-          playerProfile: applyXPAwards(postBuyout.playerProfile, getBuyoutXP()),
-        });
+        const profileBefore = postBuyout.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getBuyoutXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -2954,8 +3018,11 @@ export const useGameStore = create<GameState>()(
             (d) => d.id !== decisionId,
           ),
           decisionHistory: [...(state.decisionHistory || []), record],
-          playerProfile: applyXPAwards(state.playerProfile, getDecisionXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getDecisionXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -3000,8 +3067,11 @@ export const useGameStore = create<GameState>()(
             return updated;
           }),
           talentPool: state.talentPool.filter((t) => t.id !== talentId),
-          playerProfile: applyXPAwards(state.playerProfile, getHireTalentXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getHireTalentXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -3042,11 +3112,14 @@ export const useGameStore = create<GameState>()(
               ),
             };
           }),
-          playerProfile: applyXPAwards(
-            state.playerProfile,
-            getSupportActionXP(action),
-          ),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(
+          profileBefore,
+          getSupportActionXP(action),
+        );
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -3102,8 +3175,11 @@ export const useGameStore = create<GameState>()(
               };
             }),
           },
-          playerProfile: applyXPAwards(state.playerProfile, getIncubatorXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getIncubatorXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       graduateIncubator: () => {
@@ -3230,8 +3306,11 @@ export const useGameStore = create<GameState>()(
           labProjects: state.labProjects.map((p) =>
             p.id === projectId ? { ...p, status: "spun_out" as const } : p,
           ),
-          playerProfile: applyXPAwards(state.playerProfile, getLabSpinOutXP()),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(profileBefore, getLabSpinOutXP());
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
       },
 
       // ============================================================
@@ -3353,13 +3432,16 @@ export const useGameStore = create<GameState>()(
           launchedMonth: fund.currentMonth,
         };
 
+        const profileBefore = get().playerProfile;
+        const profileAfter = applyXPAwards(
+          profileBefore,
+          getFundraisingXP("launch"),
+        );
         set({
           activeCampaign: campaign,
-          playerProfile: applyXPAwards(
-            get().playerProfile,
-            getFundraisingXP("launch"),
-          ),
+          playerProfile: profileAfter,
         });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
         return { success: true };
       },
 
@@ -3409,11 +3491,14 @@ export const useGameStore = create<GameState>()(
                 },
               ]
             : state.news,
-          playerProfile: applyXPAwards(
-            state.playerProfile,
-            getFundraisingXP("pitch"),
-          ),
         });
+        const profileBefore = state.playerProfile;
+        const profileAfter = applyXPAwards(
+          profileBefore,
+          getFundraisingXP("pitch"),
+        );
+        set({ playerProfile: profileAfter });
+        emitSkillHintToast(profileBefore, profileAfter, get().showSkillHints);
 
         return {
           success: advanced,
@@ -3520,10 +3605,13 @@ export const useGameStore = create<GameState>()(
 
         // Terminal action: push snapshot before reset, then clear history
         const snapshot = captureSnapshot(state);
+        const profileBefore = state.playerProfile;
         const playerProfile = applyXPAwards(
-          state.playerProfile,
+          profileBefore,
           getFundraisingXP("close"),
         );
+        // Emit toast BEFORE the set() call since set resets state
+        emitSkillHintToast(profileBefore, playerProfile, state.showSkillHints);
         const fundNumber = (state.fund.fundNumber ?? 1) + 1;
         const skillLevel = state.fund.skillLevel + 1;
         const rebirthCount = state.fund.rebirthCount + 1;
@@ -3618,6 +3706,9 @@ export const useGameStore = create<GameState>()(
         set({ reportHistory: [] });
       },
 
+      // v4.0: Skill Hint Toasts (SKIL-05)
+      setShowSkillHints: (enabled) => set({ showSkillHints: enabled }),
+
       // ============================================================
       // SAVE / LOAD SLOTS
       // ============================================================
@@ -3700,6 +3791,8 @@ export const useGameStore = create<GameState>()(
           merged.currentEconomicSnapshot = null;
         if (merged.currentMarketConditions === undefined)
           merged.currentMarketConditions = null;
+        // Backfill skill hints toggle (SKIL-05)
+        if (merged.showSkillHints === undefined) merged.showSkillHints = true;
         return merged;
       },
     },

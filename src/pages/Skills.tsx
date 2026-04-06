@@ -18,6 +18,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Target,
   Brain,
@@ -207,6 +209,8 @@ function CareerCard({
 export default function Skills() {
   const gamePhase = useGameStore((s) => s.gamePhase);
   const playerProfile = useGameStore((s) => s.playerProfile);
+  const showSkillHints = useGameStore((s) => s.showSkillHints);
+  const setShowSkillHints = useGameStore((s) => s.setShowSkillHints);
 
   if (gamePhase === "setup") return <Navigate to="/" replace />;
 
@@ -226,6 +230,20 @@ export default function Skills() {
       </div>
 
       <CareerCard profile={playerProfile} />
+
+      <div className="flex items-center justify-between rounded-lg border border-border bg-card/50 px-4 py-3">
+        <Label
+          htmlFor="skill-hints"
+          className="cursor-pointer text-sm text-muted-foreground"
+        >
+          Show skill XP toasts after actions
+        </Label>
+        <Switch
+          id="skill-hints"
+          checked={showSkillHints}
+          onCheckedChange={setShowSkillHints}
+        />
+      </div>
 
       <Tabs defaultValue="hard">
         <TabsList>

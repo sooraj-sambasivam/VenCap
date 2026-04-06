@@ -795,6 +795,8 @@ export interface GameStateActions {
   generateReport: (request: ReportRequest) => string; // returns report ID
   cancelReport: (reportId: string) => void;
   clearReportHistory: () => void;
+  // v4.0: Skill Hint Toasts (SKIL-05)
+  setShowSkillHints: (enabled: boolean) => void;
 }
 
 // Feature 7: Undo snapshot — auto-derives from GameState, excludes actions + transient fields
@@ -806,6 +808,7 @@ export type GameSnapshot = Omit<
   | "tutorialStep"
   | "playerProfile"
   | "reportHistory"
+  | "showSkillHints"
 >;
 
 // ============ GAME STATE (Zustand Store Shape) ============
@@ -879,6 +882,9 @@ export interface GameState extends GameStateActions {
 
   // v4.0: Skills (excluded from snapshot — undo never rolls back progression)
   playerProfile: PlayerProfile;
+
+  // v4.0: Skill hint toasts toggle (excluded from snapshot)
+  showSkillHints: boolean;
 
   // v4.0: Fundraising
   activeCampaign: FundraisingCampaign | null;
