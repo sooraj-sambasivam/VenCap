@@ -172,6 +172,115 @@ export default function Dashboard() {
     }
   }, [unlockedAchievements, prevAchievementCount]);
 
+  // Hooks must be above early return to satisfy rules-of-hooks
+  const sectorData = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of portfolio) {
+      map.set(c.sector, (map.get(c.sector) ?? 0) + c.investedAmount);
+    }
+    return Array.from(map, ([sector, amount]) => ({ sector, amount }));
+  }, [portfolio]);
+
+  const [advancing, setAdvancing] = useState(false);
+  const [tickSummary, setTickSummary] = useState<TickSummary | null>(null);
+  const [showTickSummary, setShowTickSummary] = useState(false);
+
+  const handleAdvance = useCallback(() => {
+    setAdvancing(true);
+    requestAnimationFrame(() => {
+      const prevState = useGameStore.getState();
+      const prevPortfolio = prevState.portfolio;
+      const prevCycle = prevState.marketCycle;
+      const prevFund = prevState.fund!;
+      const prevDealPipeline = prevState.dealPipeline;
+      const prevFollowOns = prevState.followOnOpportunities;
+      const prevSecondaryOffers = prevState.secondaryOffers;
+      const prevBuyoutOffers = prevState.buyoutOffers;
+      const prevSnapshot =
+        prevState.monthlySnapshots.length > 0
+          ? prevState.monthlySnapshots[prevState.monthlySnapshots.length - 1]
+          : null;
+
+      advanceTime();
+      const state = useGameStore.getState();
+
+      const currSnapshot =
+        state.monthlySnapshots[state.monthlySnapshots.length - 1];
+      if (currSnapshot && state.fund) {
+        const summary = generateTickSummary(
+          state.fund.currentMonth,
+          prevSnapshot,
+          currSnapshot,
+          prevPortfolio,
+          state.portfolio,
+          prevCycle,
+          state.marketCycle,
+          prevFund,
+          state.fund,
+          {
+            prevDealPipeline,
+            currDealPipeline: state.dealPipeline,
+            prevFollowOns,
+            currFollowOns: state.followOnOpportunities,
+            prevSecondaryOffers,
+            currSecondaryOffers: state.secondaryOffers,
+            prevBuyoutOffers,
+            currBuyoutOffers: state.buyoutOffers,
+          },
+        );
+        if (summary.items.length > 0) {
+          setTickSummary(summary);
+          setShowTickSummary(true);
+        }
+      }
+
+      const newExits = state.portfolio.filter(
+        (c) =>
+          c.status === "exited" &&
+          !prevPortfolio.find((p) => p.id === c.id && p.status === "exited"),
+      );
+      const newFails = state.portfolio.filter(
+        (c) =>
+          c.status === "failed" &&
+          !prevPortfolio.find((p) => p.id === c.id && p.status === "failed"),
+      );
+
+      for (const exit of newExits) {
+        toast.success(
+          `${exit.name} acquired by ${exit.exitData?.acquirerName ?? "unknown"}!`,
+          {
+            description: `${formatMultiple(exit.exitData?.exitMultiple ?? 0)} return`,
+          },
+        );
+      }
+      for (const fail of newFails) {
+        toast.error(`${fail.name} has shut down`, {
+          description: fail.failureReason ?? "The company failed.",
+        });
+      }
+
+      if (newExits.length === 0 && newFails.length === 0) {
+        const active = state.portfolio.filter(
+          (c) => c.status === "active",
+        ).length;
+        const pending = state.pendingDecisions.length;
+        toast.info(
+          `Advanced to ${getMonthName(state.fund!.currentMonth)} Year ${getGameYear(state.fund!.currentMonth)}`,
+          {
+            description: `${active} active companies, ${pending} pending decisions`,
+          },
+        );
+      }
+
+      const tutState = useGameStore.getState();
+      if (tutState.tutorialMode && tutState.tutorialStep === 5) {
+        tutState.setTutorialStep(6);
+      }
+
+      setAdvancing(false);
+    });
+  }, [advanceTime]);
+
   if (!fund) return null;
 
   // Computed values
@@ -246,120 +355,6 @@ export default function Dashboard() {
   const nextMonth = fund.currentMonth + 1;
   const nextMonthName = getMonthName(nextMonth);
   const nextYear = getGameYear(nextMonth);
-
-  // Sector allocation data for pie chart
-  const sectorData = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const c of portfolio) {
-      map.set(c.sector, (map.get(c.sector) ?? 0) + c.investedAmount);
-    }
-    return Array.from(map, ([sector, amount]) => ({ sector, amount }));
-  }, [portfolio]);
-
-  const [advancing, setAdvancing] = useState(false);
-  const [tickSummary, setTickSummary] = useState<TickSummary | null>(null);
-  const [showTickSummary, setShowTickSummary] = useState(false);
-
-  const handleAdvance = useCallback(() => {
-    setAdvancing(true);
-    // Let spinner render before sync computation
-    requestAnimationFrame(() => {
-      // Capture pre-advance state for tick summary
-      const prevState = useGameStore.getState();
-      const prevPortfolio = prevState.portfolio;
-      const prevCycle = prevState.marketCycle;
-      const prevFund = prevState.fund!;
-      const prevDealPipeline = prevState.dealPipeline;
-      const prevFollowOns = prevState.followOnOpportunities;
-      const prevSecondaryOffers = prevState.secondaryOffers;
-      const prevBuyoutOffers = prevState.buyoutOffers;
-      const prevSnapshot =
-        prevState.monthlySnapshots.length > 0
-          ? prevState.monthlySnapshots[prevState.monthlySnapshots.length - 1]
-          : null;
-
-      advanceTime();
-      const state = useGameStore.getState();
-
-      // Generate tick summary
-      const currSnapshot =
-        state.monthlySnapshots[state.monthlySnapshots.length - 1];
-      if (currSnapshot && state.fund) {
-        const summary = generateTickSummary(
-          state.fund.currentMonth,
-          prevSnapshot,
-          currSnapshot,
-          prevPortfolio,
-          state.portfolio,
-          prevCycle,
-          state.marketCycle,
-          prevFund,
-          state.fund,
-          {
-            prevDealPipeline,
-            currDealPipeline: state.dealPipeline,
-            prevFollowOns,
-            currFollowOns: state.followOnOpportunities,
-            prevSecondaryOffers,
-            currSecondaryOffers: state.secondaryOffers,
-            prevBuyoutOffers,
-            currBuyoutOffers: state.buyoutOffers,
-          },
-        );
-        if (summary.items.length > 0) {
-          setTickSummary(summary);
-          setShowTickSummary(true);
-        }
-      }
-
-      // Summarize what happened via toasts (exits/failures)
-      const newExits = state.portfolio.filter(
-        (c) =>
-          c.status === "exited" &&
-          !prevPortfolio.find((p) => p.id === c.id && p.status === "exited"),
-      );
-      const newFails = state.portfolio.filter(
-        (c) =>
-          c.status === "failed" &&
-          !prevPortfolio.find((p) => p.id === c.id && p.status === "failed"),
-      );
-
-      for (const exit of newExits) {
-        toast.success(
-          `${exit.name} acquired by ${exit.exitData?.acquirerName ?? "unknown"}!`,
-          {
-            description: `${formatMultiple(exit.exitData?.exitMultiple ?? 0)} return`,
-          },
-        );
-      }
-      for (const fail of newFails) {
-        toast.error(`${fail.name} has shut down`, {
-          description: fail.failureReason ?? "The company failed.",
-        });
-      }
-
-      if (newExits.length === 0 && newFails.length === 0) {
-        const active = state.portfolio.filter(
-          (c) => c.status === "active",
-        ).length;
-        const pending = state.pendingDecisions.length;
-        toast.info(
-          `Advanced to ${getMonthName(state.fund!.currentMonth)} Year ${getGameYear(state.fund!.currentMonth)}`,
-          {
-            description: `${active} active companies, ${pending} pending decisions`,
-          },
-        );
-      }
-
-      // Tutorial: auto-advance from step 5 (Advance time) to step 6 (You're ready!)
-      const tutState = useGameStore.getState();
-      if (tutState.tutorialMode && tutState.tutorialStep === 5) {
-        tutState.setTutorialStep(6);
-      }
-
-      setAdvancing(false);
-    });
-  }, [advanceTime]);
 
   return (
     <PageShell className="max-w-6xl mx-auto px-4 py-6">
